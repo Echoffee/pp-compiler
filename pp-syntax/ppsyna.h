@@ -1,4 +1,4 @@
-enum e_pp_type_id { NONE, INT, BOOL, ARRAY_INT, ARRAY_BOOL, ARRAY_ARRAY};
+enum e_pp_type_id { NONE, INT, BOOL, ARRAY };
 
 typedef enum e_pp_type_id pp_type_id;
 
@@ -21,7 +21,7 @@ struct s_pp_func{
 	char* name;
 	pp_type ret_type;
 	int num_args;
-	pp_var* args;
+	pp_var args;		//reverse order
 	struct s_pp_func* next;
 };
 
@@ -30,5 +30,7 @@ typedef struct s_pp_func* pp_func;
 
 
 void env_add_variable(char* name, pp_type type);
-void env_add_function(char* name, pp_type ret_type, pp_var* args);
+void env_add_function(char* name, pp_type ret_type, pp_var args);
 void env_add_lcl_variable(pp_var* lcl_root, char* name, pp_type type);
+
+void env_display();
