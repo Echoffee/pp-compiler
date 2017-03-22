@@ -1,7 +1,25 @@
-%{
-	
-%}
+%error-verbose
 
+%{
+	#include <stdio.h>
+	#include "ppsyna.h"
+	
+	int yylex();
+	int yyerror(char* s);
+%}
+%union {
+	int ival;
+	char* sval;
+}
+
+%token T_ar NewAr T_boo T_int Def Dep Af Sk V_TRUE V_FALSE Se If Th El Var Wh Do Pl Mo Mu And Or Not Lt Eq
+%token S_OP S_CL P_OP P_CL B_OP B_CL S_C S_DP
+%token T_int T_str
+
+%type<ival> T_int
+%type<sval> T_str
+
+%start MP
 %%
 
 MP		: L_vart LD C
