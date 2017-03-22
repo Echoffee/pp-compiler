@@ -3,11 +3,18 @@
 #include <string.h>
 #include "ppsyna.h"
 
-pp_var v_root = NULL;
-pp_var v_current = NULL;
-
+pp_func f_context = NULL;
 pp_func f_root = NULL;
 pp_func f_current = NULL;
+
+pp_type syna_create_type(pp_type_id type, pp_type next)
+{
+	pp_type t = (pp_type) malloc(sizeof(struct s_pp_type));
+	t->type = type;
+	t->next = next;
+	
+	return t;
+}
 
 void env_add_variable(char* name, pp_type type)
 {
@@ -16,13 +23,13 @@ void env_add_variable(char* name, pp_type type)
 	v->type = type;
 	v->next = NULL;
 	
-	if (v_current != NULL)
-		v_current->next = v;
+	if (f_context->context_current != NULL)
+		f_context->context_current->next = v;
 		
-	if (v_root == NULL)
-		v_root = v;
+	if (f_context->context == NULL)
+		f_context->context = v;
 		
-	v_current = v;
+	f_context->context_current = v;
 }
 
 void env_add_function(char* name, pp_type ret_type, pp_var args)
@@ -31,6 +38,8 @@ void env_add_function(char* name, pp_type ret_type, pp_var args)
 	f->name = strdup(name);
 	f->ret_type = type;
 	f->args = args;
+	f->context = NULL;
+	f->context_current = NULL;
 	
 	if (f_current != NULL)
 		f_current->next = f;
@@ -52,6 +61,47 @@ pp_var env_add_lcl_variable(pp_var lcl_parent, char* name, pp_type type)
 		lcl_parent->next = v;
 		
 	return v;
+}
+
+void env_initialize()
+{
+	env_add_function("main_program", syna_create_type(NONE, NULL), NULL);
+	env_change_context("main_program");
+}
+
+void env_change_context(char* context_name)
+{
+		pp_func f = f_root;
+		while (f != NULL && strcmp(f->name, context_name))
+			f = f->next;
+			
+		if (f == NULL)
+			fprintf(stderr, "ERROR : Context '%s' not found\n", context_name);
+			
+		f_context = f;
+}
+
+pp_type env_get_type_of_variable(char* name)
+{
+	pp_func c = f_context;
+	pp_var v = c->context;
+	
+	while (v != NULL && strcmp(v->name, name))
+		v = v->next;
+		
+	if (v != NULL)
+		return v->type;
+	
+	env_change_context("main_program");
+	v = f_context->context;
+	while (v != NULL && strcmp(v->name, name))
+		v = v->next;
+	
+	if (v == NULL)
+		fprintf(stderr, "ERROR : Variable '%s' not found (current context : '%s')\n", name, c->name);
+		
+	f_context = c;
+	return v->type;
 }
 
 void display_args(pp_var lcl_root, int rank)
