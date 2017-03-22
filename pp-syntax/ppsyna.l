@@ -37,7 +37,7 @@
 "(" { return P_OP; }
 ")" { return P_CL; }
 "{" { return B_OP; }
-"}" { return B_VL; }
+"}" { return B_CL; }
 "," { return S_C; }
 ":" { return S_DP; }
 
