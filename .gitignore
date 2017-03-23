@@ -1,0 +1,5 @@
+*.lex.yy.c
+*.tab.c
+*.tab.h
+*.pp
+ppsyna

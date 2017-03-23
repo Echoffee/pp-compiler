@@ -1,7 +1,7 @@
 enum e_pp_type_id { NONE, INT, BOOL, ARRAY };
 enum e_syna_opi { INONE, PL, MO, MU };
 enum e_syna_opb { BNONE, OR, LT, EQ, AND, NOT};
-enum e_syna_node_id { NEMPTY, NOPI, NOPB, NPBA, NVALUE, NVAR, NARRAY, NBRANCH, NITE, NWD, NAAF, NVAF, NSKIP, NEXPR, NADEF, NTYPE, NPDEF, NFDEF}
+enum e_syna_node_id { NEMPTY, NROOT, NOPI, NOPB, NPBA, NVALUE, NVAR, NNVAR, NARRAY, NBRANCH, NITE, NWD, NAAF, NVAF, NSKIP, NEXPR, NVDEF, NTYPE, NPDEF, NFDEF};
 
 typedef enum e_pp_type_id pp_type_id;
 typedef enum e_syna_opi syna_opi;
@@ -10,7 +10,7 @@ typedef enum e_syna_node_id syna_node_id;
 
 struct s_pp_type{
 	pp_type_id type;
-	struct s_pp_type* next_dim;
+	struct s_pp_type* next;
 };
 
 typedef struct s_pp_type* pp_type;
@@ -44,17 +44,19 @@ struct s_syna_node{
 	pp_var variable;
 	pp_func function;
 	syna_opi opi;
-	syna_opb = opb;
+	syna_opb opb;
 };
 
+typedef struct s_syna_node* syna_node;
 
 void env_initialize();
-void env_add_variable(char* name, pp_type type);
+pp_var env_add_variable(char* name, pp_type type);
 void env_add_function(char* name, pp_type ret_type, pp_var args);
-void env_add_lcl_variable(pp_var* lcl_root, char* name, pp_type type);
+pp_var env_add_lcl_variable(pp_var lcl_parent, char* name, pp_type type);
 pp_type env_get_type_of_variable(char* name);
 pp_type env_get_type_of_function(char* name);
 void env_change_scope(char* scope);
+void env_change_context(char* context);
 
 syna_node syna_opi_node(syna_node member_left, syna_node member_right, syna_opi op);
 syna_node syna_opb_node(syna_node member_left, syna_node member_right, syna_opb op);
@@ -72,8 +74,16 @@ syna_node syna_skip_node();
 syna_node syna_a_node(syna_node content);
 syna_node syna_empty_node();
 syna_node syna_expr_node(syna_node expr);
-syna_node syna_adef_node(syna_node dest, syna_node value);
+syna_node syna_vdef_node(syna_node dest, syna_node type);
 syna_node syna_type_node(pp_type_id type, syna_node next);
-syna_node syna_pdef_node(syna_node name, syna_node args);
-syna_node syna_fdef_node(syna_node name, syna_node args, syna_node ret);
+syna_node syna_pdef_node(char* name, syna_node args);
+syna_node syna_fdef_node(char* name, syna_node args, syna_node ret);
+syna_node syna_root_node(syna_node def_global_vars, syna_node def_pf, syna_node c);
+syna_node syna_new_var_node(char* name);
+syna_node syna_pbody_node(syna_node def, syna_node def_vars, syna_node body); //body of func/proc
+syna_node syna_fbody_node(syna_node def, syna_node def_vars, syna_node body);
+syna_node syna_call_func_node(char* name, syna_node args);
+syna_node syna_newarray_node(syna_node type, syna_node expr);
+
+void syna_execute(syna_node root);
 void env_display();

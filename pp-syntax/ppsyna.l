@@ -41,5 +41,6 @@
 "," { return S_C; }
 ":" { return S_DP; }
 
-[0-9]* { yylval.ival = atoi(yytext); return T_int; }
+[0-9]* { yylval.ival = atoi(yytext); return I; }
 [a-zA-Z\_][a-zA-Z0-9\_]* { yylval.sval = strdup(yytext); return T_str; }
+%%

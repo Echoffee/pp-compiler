@@ -16,7 +16,7 @@ pp_type syna_create_type(pp_type_id type, pp_type next)
 	return t;
 }
 
-void env_add_variable(char* name, pp_type type)
+pp_var env_add_variable(char* name, pp_type type)
 {
 	pp_var v = (pp_var) malloc(sizeof(struct s_pp_var));
 	v->name = strdup(name);
@@ -30,13 +30,15 @@ void env_add_variable(char* name, pp_type type)
 		f_context->context = v;
 		
 	f_context->context_current = v;
+	
+	return v;
 }
 
 void env_add_function(char* name, pp_type ret_type, pp_var args)
 {
 	pp_func f = (pp_func) malloc(sizeof(struct s_pp_func));
 	f->name = strdup(name);
-	f->ret_type = type;
+	f->ret_type = ret_type;
 	f->args = args;
 	f->context = NULL;
 	f->context_current = NULL;
@@ -81,7 +83,7 @@ void env_change_context(char* context_name)
 		f_context = f;
 }
 
-pp_type env_get_variable(char* name)
+pp_var env_get_variable(char* name)
 {
 	pp_func c = f_context;
 	pp_var v = c->context;
@@ -101,6 +103,7 @@ pp_type env_get_variable(char* name)
 		fprintf(stderr, "ERROR : Variable '%s' not found (current context : '%s')\n", name, c->name);
 		
 	f_context = c;
+	v = env_add_variable(name, NONE);
 	return v;
 }
 
@@ -146,50 +149,57 @@ void display_args(pp_var lcl_root, int rank)
 void env_display()
 {
 	printf("===== ENV =====\n");
-	while(v_root != NULL)
+	while(f_root != NULL)
 	{
-		printf("Var %s of type", v_root->name);
-		pp_type t_current = v_root->type;
-		while (t_current != NULL)
+		pp_var v_root = f_root->context;
+		while (v_root != NULL)
 		{
-			char s[9];
-			switch (t_current->type) {
-				case NONE:
+			
+			printf("Var %s of type", v_root->name);
+			pp_type t_current = v_root->type;
+			while (t_current != NULL)
+			{
+				char s[9];
+				switch (t_current->type) {
+					case NONE:
 					sprintf(s, "none");
 					break;
-				
-				case INT:
-				 	sprintf(s, "integer");
+					
+					case INT:
+					sprintf(s, "integer");
 					break;
 					
-				case BOOL:
+					case BOOL:
 					sprintf(s, "boolean");
 					break;
 					
-				case ARRAY:
+					case ARRAY:
 					sprintf(s, "array of");
 					break;
+				}
+				
+				printf(" %s", s);
+				t_current = t_current->next;
 			}
 			
-			printf(" %s", s);
-			t_current = t_current->next;
+			printf(".\n");
+			v_root = v_root->next;
 		}
 		
-		printf(".\n");
-		v_root = v_root->next;
+		f_root = f_root->next;
 	}
 	
 	while (f_root != NULL)
 	{
 		char s[10];
-		switch (f_current->ret_type) {
+		switch (f_current->ret_type->type) {
 			case NONE:
-				sprintf(s, "Procedure");
-				break;
-				
+			sprintf(s, "Procedure");
+			break;
+			
 			default:
-				sprintf(s, "Function");
-				break;
+			sprintf(s, "Function");
+			break;
 		}
 		
 		printf("%s %s (", s, f_root->name);
@@ -197,22 +207,22 @@ void env_display()
 		if (f_root->ret_type != NONE)
 		{
 			printf(" :");
-			pp_type t_current = f_root->type;
+			pp_type t_current = f_root->ret_type;
 			while (t_current != NULL)
 			{
 				char s[9];
 				switch (t_current->type) {
 					case INT:
-					 	sprintf(s, "integer");
-						break;
-						
+					sprintf(s, "integer");
+					break;
+					
 					case BOOL:
-						sprintf(s, "boolean");
-						break;
-						
+					sprintf(s, "boolean");
+					break;
+					
 					case ARRAY:
-						sprintf(s, "array of");
-						break;
+					sprintf(s, "array of");
+					break;
 				}
 				
 				printf(" %s", s);
@@ -232,7 +242,7 @@ syna_node syna_create_node(int num_childs)
 {
 	syna_node n = (syna_node) malloc(sizeof(struct s_syna_node));
 	n->type = NEMPTY;
-	n->value = NULL;
+	n->value = 0;
 	n->value_type = NONE;
 	n->variable = NULL;
 	n->function = NULL;
@@ -249,6 +259,7 @@ syna_node syna_opi_node(syna_node member_left, syna_node member_right, syna_opi 
 	n->type = NOPI;
 	n->childs[0] = member_left;
 	n->childs[1] = member_right;
+	n->value_type = syna_create_type(INT, NULL);
 	n->opi = op;
 	
 	return n;
@@ -260,6 +271,7 @@ syna_node syna_opb_node(syna_node member_left, syna_node member_right, syna_opb 
 	n->type = NOPB;
 	n->childs[0] = member_left;
 	n->childs[1] = member_right;
+	n->value_type = syna_create_type(BOOL, NULL);
 	n->opb = op;
 	
 	return n;
@@ -399,12 +411,13 @@ syna_node syna_expr_node(syna_node expr)
 	return n;
 }
 
-syna_node syna_adef_node(syna_node dest, syna_node value)
+syna_node syna_vdef_node(syna_node dest, syna_node type)
 {
 	syna_node n = syna_create_node(2);
-	n->type = NADEF;
+	n->type = NVDEF;
 	n->childs[0] = dest;
-	n->childs[1] = value;
+	n->childs[1] = type;
+	n->value_type = type->value_type;
 	
 	return n;
 }
@@ -414,28 +427,197 @@ syna_node syna_type_node(pp_type_id type, syna_node next)
 	syna_node n = syna_create_node(1);
 	n->type = NTYPE;
 	n->childs[0] = next;
-	n->value_type = type;
-	
+	n->value_type = syna_create_type(type, NULL); //incorrect
+
 	return n;
 }
 
-syna_node syna_pdef_node(syna_node name, syna_node args)
+syna_node syna_pdef_node(char* name, syna_node args)
 {
 	syna_node n = syna_create_node(2);
 	n->type = NPDEF;
-	n->childs[0] = name;
+	//n->childs[0] = name; TOFIX
 	n->childs[1] = args;
 	
 	return n;
 }
 
-syna_node syna_fdef_node(syna_node name, syna_node args, syna_node ret)
+syna_node syna_fdef_node(char* name, syna_node args, syna_node ret)
 {
 	syna_node n = syna_create_node(3);
 	n->type = NFDEF;
-	n->childs[0] = name;
+	//n->childs[0] = name; To Fix
 	n->childs[1] = args;
 	n->childs[2] = ret;
 	
 	return n;
+}
+
+syna_node syna_root_node(syna_node vart, syna_node ld, syna_node c)
+{
+	syna_node n = syna_create_node(3);
+	n->type = NROOT;
+	n->childs[0] = vart;
+	n->childs[1] = ld;
+	n->childs[2] = c;
+	
+	return n;
+}
+
+syna_node syna_new_var_node(char* name)
+{
+	syna_node n = syna_create_node(0);
+	n->type = NNVAR;
+	n->variable = env_add_variable(name, syna_create_type(NONE, NULL));
+	
+	return n;
+}
+
+syna_node syna_pbody_node(syna_node def, syna_node def_vars, syna_node body)
+{
+	return NULL; //temp
+}
+
+syna_node syna_fbody_node(syna_node def, syna_node def_vars, syna_node body)
+{
+	return NULL; //temp
+}
+
+syna_node syna_call_func_node(char* name, syna_node args)
+{
+	return NULL;
+}
+
+syna_node syna_newarray_node(syna_node type, syna_node expr)
+{
+	return NULL;
+}
+
+
+void syna_execute(syna_node root)
+{
+	switch (root->type) {
+		case NEMPTY:
+			//eh
+			break;
+		
+		case NROOT:
+		
+			break;
+		
+		case NOPI:
+			syna_execute(root->childs[0]);
+			syna_execute(root->childs[1]);
+			switch (root->opi) {
+				case INONE:
+					//eh
+					break;
+				
+				case PL:
+					//root->value = root->childs[0]->value + root->childs[1]->value;
+					break;
+					
+				case MO:
+					//root->value = root->childs[0]->value - root->childs[1]->value;
+					break;
+					
+				case MU:
+					//root->value = root->childs[0]->value * root->childs[1]->value;
+					break;
+			}
+			break;
+		
+		case NOPB:
+			syna_execute(root->childs[0]);
+			syna_execute(root->childs[1]);
+			switch (root->opi) {
+				case INONE:
+					//eh
+					break;
+				
+				case OR:
+					//root->value = (root->childs[1]->value + root->childs[0]->value > 0? 1 : 0);
+					break;
+				
+				case LT:
+					//root->value = (root->childs[1]->value < root->childs[0]->value? 1 : 0);
+					break;
+				
+				case EQ:
+					//root->value = (root->childs[1]->value == root->childs[0]->value? 1 : 0);
+					break;
+				
+				case AND:
+					//root->value = (root->childs[1]->value * root->childs[0]->value > 0? 1 : 0);
+					break;
+				
+				case NOT:
+					//root->value = 0;
+					break;
+			}
+			break;
+		
+		case NPBA:
+		   syna_execute(root->childs[0]);
+		break;
+		
+		case NVALUE:
+			//end
+		break;
+		
+		case NVAR:
+			
+		break;
+		
+		case NARRAY:
+			  
+		break;
+		
+		case NBRANCH:
+			   
+		break;
+		
+		case NITE:
+				
+		break;
+		
+		case NWD:
+				 
+		break;
+		
+		case NAAF:
+				  
+		break;
+		
+		case NVAF:
+			syna_execute(root->childs[1]);
+			syna_execute(root->childs[0]);
+			root->childs[0]->variable->type = root->childs[1]->value_type;
+			break;
+		
+		case NSKIP:
+			//eh	
+			break;
+		
+		case NEXPR:
+			
+		break;
+		
+		case NVDEF:
+			root->childs[0]->variable->type = root->value_type;
+			fprintf(stderr, "%d\n", root->childs[0]->variable->type->type); //NEVER CALLED
+			break;
+		
+		case NTYPE: 
+		break;
+		
+		case NPDEF:
+						
+		break;
+		
+		case NFDEF:
+					 
+		break;
+		
+	}
 }
