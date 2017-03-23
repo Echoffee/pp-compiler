@@ -81,7 +81,7 @@ void env_change_context(char* context_name)
 		f_context = f;
 }
 
-pp_type env_get_type_of_variable(char* name)
+pp_type env_get_variable(char* name)
 {
 	pp_func c = f_context;
 	pp_var v = c->context;
@@ -90,7 +90,7 @@ pp_type env_get_type_of_variable(char* name)
 		v = v->next;
 		
 	if (v != NULL)
-		return v->type;
+		return v;
 	
 	env_change_context("main_program");
 	v = f_context->context;
@@ -101,7 +101,7 @@ pp_type env_get_type_of_variable(char* name)
 		fprintf(stderr, "ERROR : Variable '%s' not found (current context : '%s')\n", name, c->name);
 		
 	f_context = c;
-	return v->type;
+	return v;
 }
 
 void display_args(pp_var lcl_root, int rank)
@@ -224,4 +224,218 @@ void env_display()
 		f_root = f_root->next;
 	}
 	
+}
+
+//AST
+
+syna_node syna_create_node(int num_childs)
+{
+	syna_node n = (syna_node) malloc(sizeof(struct s_syna_node));
+	n->type = NEMPTY;
+	n->value = NULL;
+	n->value_type = NONE;
+	n->variable = NULL;
+	n->function = NULL;
+	n->opi = INONE;
+	n->opb = BNONE;
+	n->childs = (syna_node*) malloc(sizeof(struct s_syna_node) * num_childs);
+	
+	return n;
+}
+
+syna_node syna_opi_node(syna_node member_left, syna_node member_right, syna_opi op)
+{
+	syna_node n = syna_create_node(2);
+	n->type = NOPI;
+	n->childs[0] = member_left;
+	n->childs[1] = member_right;
+	n->opi = op;
+	
+	return n;
+}
+
+syna_node syna_opb_node(syna_node member_left, syna_node member_right, syna_opb op)
+{
+	syna_node n = syna_create_node(2);
+	n->type = NOPB;
+	n->childs[0] = member_left;
+	n->childs[1] = member_right;
+	n->opb = op;
+	
+	return n;
+}
+
+syna_node syna_p_node(syna_node content)
+{
+	syna_node n = syna_create_node(1);
+	n->type = NPBA;
+	n->childs[0] = content;
+	
+	return n;
+}
+
+syna_node syna_int_node(int value)
+{
+	syna_node n = syna_create_node(0);
+	n->type = NVALUE;
+	n->value = value;
+	n->value_type = syna_create_type(INT, NULL);
+	
+	return n;
+}
+
+syna_node syna_var_node(char* name)
+{
+	syna_node n = syna_create_node(0);
+	n->type = NVAR;
+	n->variable = env_get_variable(name);
+	n->value_type = n->variable->type;
+	
+	return n;
+}
+
+syna_node syna_bool_node(int value)
+{
+	syna_node n = syna_create_node(0);
+	n->type = NVALUE;
+	n->value = value;
+	n->value_type = syna_create_type(BOOL, NULL);
+	
+	return n;
+}
+
+syna_node syna_array_node(syna_node member, syna_node index)
+{
+	//Find a way to get an object from an array 1d+
+	syna_node n = syna_create_node(2);
+	n->type = NARRAY;
+	n->childs[0] = member;
+	n->childs[1];
+	
+	return n;
+}
+
+syna_node syna_branch_node(syna_node left, syna_node right)
+{
+	syna_node n = syna_create_node(2);
+	n->type = NBRANCH;
+	n->childs[0] = left;
+	n->childs[1] = right;
+	
+	return n;
+}
+
+syna_node syna_ITE_node(syna_node cond, syna_node th, syna_node el)
+{
+	syna_node n = syna_create_node(3);
+	n->type = NITE;
+	n->childs[0] = cond;
+	n->childs[1] = th;
+	n->childs[2] = el;
+	
+	return n;
+}
+
+syna_node syna_WD_node(syna_node cond, syna_node d)
+{
+	syna_node n = syna_create_node(2);
+	n->type = NWD;
+	n->childs[0] = cond;
+	n->childs[1] = d;
+	
+	return n;
+}
+
+syna_node syna_aaf_node(syna_node dest, syna_node value)
+{
+	syna_node n = syna_create_node(2);
+	n->type = NAAF;
+	n->childs[0] = dest;
+	n->childs[1] = value;
+	
+	return n;
+}
+
+syna_node syna_vaf_node(syna_node dest, syna_node value)
+{
+	syna_node n = syna_create_node(2);
+	n->type = NVAF;
+	n->childs[0] = dest;
+	n->childs[1] = value;
+	
+	return n;
+}
+
+syna_node syna_skip_node()
+{
+	syna_node n = syna_create_node(0);
+	n->type = NSKIP;
+	
+	return n;
+}
+
+syna_node syna_a_node(syna_node content)
+{
+	syna_node n = syna_create_node(1);
+	n->type = NPBA;
+	n->childs[0] = content;
+	
+	return n;
+}
+
+syna_node syna_empty_node()
+{
+	syna_node n = syna_create_node(0);
+	
+	return n;
+}
+
+syna_node syna_expr_node(syna_node expr)
+{
+	syna_node n = syna_create_node(1);
+	n->type = NEXPR;
+	n->childs[0] = expr;
+	
+	return n;
+}
+
+syna_node syna_adef_node(syna_node dest, syna_node value)
+{
+	syna_node n = syna_create_node(2);
+	n->type = NADEF;
+	n->childs[0] = dest;
+	n->childs[1] = value;
+	
+	return n;
+}
+
+syna_node syna_type_node(pp_type_id type, syna_node next)
+{
+	syna_node n = syna_create_node(1);
+	n->type = NTYPE;
+	n->childs[0] = next;
+	n->value_type = type;
+	
+	return n;
+}
+
+syna_node syna_pdef_node(syna_node name, syna_node args)
+{
+	syna_node n = syna_create_node(2);
+	n->type = NPDEF;
+	n->childs[0] = name;
+	n->childs[1] = args;
+	
+	return n;
+}
+
+syna_node syna_fdef_node(syna_node name, syna_node args, syna_node ret)
+{
+	syna_node n = syna_create_node(3);
+	n->type = NFDEF;
+	n->childs[0] = name;
+	n->childs[1] = args;
+	n->childs[2] = ret;
+	
+	return n;
 }

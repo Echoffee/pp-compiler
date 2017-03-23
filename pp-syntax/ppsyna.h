@@ -1,10 +1,12 @@
 enum e_pp_type_id { NONE, INT, BOOL, ARRAY };
-enum e_syna_opi { PL, MO, MU };
-enum e_syna_opb { OR, LT, EQ, AND, NOT};
+enum e_syna_opi { INONE, PL, MO, MU };
+enum e_syna_opb { BNONE, OR, LT, EQ, AND, NOT};
+enum e_syna_node_id { NEMPTY, NOPI, NOPB, NPBA, NVALUE, NVAR, NARRAY, NBRANCH, NITE, NWD, NAAF, NVAF, NSKIP, NEXPR, NADEF, NTYPE, NPDEF, NFDEF}
 
 typedef enum e_pp_type_id pp_type_id;
 typedef enum e_syna_opi syna_opi;
 typedef enum e_syna_opb syna_opb;
+typedef enum e_syna_node_id syna_node_id;
 
 struct s_pp_type{
 	pp_type_id type;
@@ -31,6 +33,19 @@ struct s_pp_func{
 };
 
 typedef struct s_pp_func* pp_func;
+
+struct s_syna_node{
+	syna_node_id type;
+	struct s_syna_node** childs;
+	
+	//any of these may be useless
+	int value;
+	pp_type value_type;
+	pp_var variable;
+	pp_func function;
+	syna_opi opi;
+	syna_opb = opb;
+};
 
 
 void env_initialize();
