@@ -79,7 +79,7 @@ L_argtnn: Argt  { $$ = $1; }
 		| L_argtnn S_C Argt { $$ = syna_branch_node($1, $3); }
 		;
 		
-Argt	: V S_DP TP { $$ = syna_vdef_node(syna_new_var_node($1), $3);} //var definition
+Argt	: V S_DP TP { $$ = syna_vdef_node(syna_new_var_node($1), $3); } //var definition
 		;
 		
 TP		: T_boo { $$ = syna_type_node(BOOL, NULL); }

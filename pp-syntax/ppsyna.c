@@ -182,7 +182,7 @@ void env_display()
 				t_current = t_current->next;
 			}
 			
-			printf(".\n");
+			printf(" in context '%s'.\n", f_root->name);
 			v_root = v_root->next;
 		}
 		
@@ -502,7 +502,9 @@ void syna_execute(syna_node root)
 			break;
 		
 		case NROOT:
-		
+			syna_execute(root->childs[0]);
+			syna_execute(root->childs[1]);
+			syna_execute(root->childs[2]);
 			break;
 		
 		case NOPI:
@@ -574,7 +576,8 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NBRANCH:
-			   
+			syna_execute(root->childs[0]);
+			syna_execute(root->childs[1]);
 		break;
 		
 		case NITE:
@@ -605,7 +608,7 @@ void syna_execute(syna_node root)
 		
 		case NVDEF:
 			root->childs[0]->variable->type = root->value_type;
-			fprintf(stderr, "%d\n", root->childs[0]->variable->type->type); //NEVER CALLED
+			fprintf(stderr, "*******%d\n", root->childs[0]->variable->type->type); //NEVER CALLED
 			break;
 		
 		case NTYPE: 
