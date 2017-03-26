@@ -64,6 +64,7 @@ Et		: V B_OP E B_CL { $$ = syna_array_node(syna_var_node($1), $3); }
 		;
 
 C		: C Se CC { $$ = syna_branch_node($1, $3); } /* previously C Se C -- shift-red conflict correction for (C Se C.)*/
+
 		| CC { $$ = $1; }
 		| If E Th CC El CC { $$ = syna_ITE_node($2, $4, $6); }
 		| Wh E Do CC { $$ = syna_WD_node($2, $4); }
@@ -114,8 +115,8 @@ D_entp	: Dep NPro P_OP L_argt P_CL { $$ = syna_pdef_node($2, $4); }
 D_entf	: Def NFon P_OP L_argt P_CL S_DP TP { $$ = syna_fdef_node($2, $4, $7); }
 		;
 
-D		: D_entp L_vart CC	{ $$ = syna_pbody_node($1, $2, $3); }
-		| D_entf L_vart CC	{ $$ = syna_fbody_node($1, $2, $3); }
+D		: D_entp L_vart C	{ $$ = syna_pbody_node($1, $2, $3); }
+		| D_entf L_vart C	{ $$ = syna_fbody_node($1, $2, $3); }
 		;
 
 LD		: %empty { $$ = syna_empty_node(); }

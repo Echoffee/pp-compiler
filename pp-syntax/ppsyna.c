@@ -248,6 +248,7 @@ syna_node syna_create_node(int num_childs)
 	n->function = NULL;
 	n->opi = INONE;
 	n->opb = BNONE;
+	n->string = NULL;
 	n->childs = (syna_node*) malloc(sizeof(struct s_syna_node) * num_childs);
 	
 	return n;
@@ -427,28 +428,28 @@ syna_node syna_type_node(pp_type_id type, syna_node next)
 	syna_node n = syna_create_node(1);
 	n->type = NTYPE;
 	n->childs[0] = next;
-	n->value_type = syna_create_type(type, NULL); //incorrect
+	n->value_type = syna_create_type(type, NULL); //incorrect (1d only)
 
 	return n;
 }
 
 syna_node syna_pdef_node(char* name, syna_node args)
 {
-	syna_node n = syna_create_node(2);
+	syna_node n = syna_create_node(1);
 	n->type = NPDEF;
-	//n->childs[0] = name; TOFIX
-	n->childs[1] = args;
+	n->string = strdup(name);
+	n->childs[0] = args;
 	
 	return n;
 }
 
 syna_node syna_fdef_node(char* name, syna_node args, syna_node ret)
 {
-	syna_node n = syna_create_node(3);
+	syna_node n = syna_create_node(2);
 	n->type = NFDEF;
-	//n->childs[0] = name; To Fix
-	n->childs[1] = args;
-	n->childs[2] = ret;
+	n->string = strdup(name);
+	n->childs[0] = args;
+	n->childs[1] = ret;
 	
 	return n;
 }
@@ -475,12 +476,24 @@ syna_node syna_new_var_node(char* name)
 
 syna_node syna_pbody_node(syna_node def, syna_node def_vars, syna_node body)
 {
-	return NULL; //temp
+	syna_node n = syna_create_node(3);
+	n->type = NPBODY;
+	n->childs[0] = def;
+	n->childs[1] = def_vars;
+	n->childs[2] = body;
+	
+	return n;
 }
 
 syna_node syna_fbody_node(syna_node def, syna_node def_vars, syna_node body)
 {
-	return NULL; //temp
+	syna_node n = syna_create_node(3);
+	n->type = NFBODY;
+	n->childs[0] = def;
+	n->childs[1] = def_vars;
+	n->childs[2] = body;
+	
+	return n;
 }
 
 syna_node syna_call_func_node(char* name, syna_node args)
@@ -608,7 +621,7 @@ void syna_execute(syna_node root)
 		
 		case NVDEF:
 			root->childs[0]->variable->type = root->value_type;
-			fprintf(stderr, "*******%d\n", root->childs[0]->variable->type->type); //NEVER CALLED
+			fprintf(stderr, "*******%d\n", root->childs[0]->variable->type->type);
 			break;
 		
 		case NTYPE: 
@@ -619,8 +632,25 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NFDEF:
-					 
+			syna_execute(root->childs[0]);	//define args
+			syna_execute(root->childs[1]); //define ret type
+			root->value_type = root->childs[1]->value_type;
+			env_add_function(root->string, root->value_type, root->variable);
+		break;
+	
+		case NPBODY:
+		syna_execute(root->childs[0]); //Function/Procedure declaration
+		//Needs to change context
+		syna_execute(root->childs[1]); //Add local variables
+		//When called, must execute root->childs[3]
 		break;
 		
+		case NFBODY:
+		syna_execute(root->childs[0]); //Function/Procedure declaration
+		//Needs to change context
+		syna_execute(root->childs[1]); //Add local variables
+		//When called, must execute root->childs[3]
+		
+		break;
 	}
 }
