@@ -645,7 +645,7 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NNVAR:
-			fprintf(stderr, "slt\n");
+
 		break;
 		
 		case NVAF:
