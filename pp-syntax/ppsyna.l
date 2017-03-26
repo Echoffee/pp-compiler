@@ -32,12 +32,12 @@
 "=" { return Eq; }
 [ \n\r\t] { }
 
-"[" { return S_OP; }
-"]" { return S_CL; }
+"[" { return B_OP; }
+"]" { return B_CL; }
 "(" { return P_OP; }
 ")" { return P_CL; }
-"{" { return B_OP; }
-"}" { return B_CL; }
+"{" { return A_OP; }
+"}" { return A_CL; }
 "," { return S_C; }
 ":" { return S_DP; }
 
