@@ -34,12 +34,31 @@ pp_var env_add_variable(char* name, pp_type type)
 	return v;
 }
 
+pp_var lcl_add_variable(pp_func func, char* name, pp_type type)
+{
+	pp_var v = (pp_var) malloc(sizeof(struct s_pp_var));
+	v->name = strdup(name);
+	v->type = type;
+	v->next = NULL;
+	
+	if (func->args_current != NULL)
+		func->args_current->next = v;
+		
+	if (func->args == NULL)
+		func->args = v;
+		
+	func->args_current = v;
+	
+	return v;
+}
+
 void env_add_function(char* name, pp_type ret_type, pp_var args)
 {
 	pp_func f = (pp_func) malloc(sizeof(struct s_pp_func));
 	f->name = strdup(name);
 	f->ret_type = ret_type;
 	f->args = args;
+	f->args_current = f->args;
 	f->context = NULL;
 	f->context_current = NULL;
 	
@@ -192,7 +211,7 @@ void env_display()
 	while (f_root != NULL)
 	{
 		char s[10];
-		switch (f_current->ret_type->type) {
+		switch (f_root->ret_type->type) {
 			case NONE:
 			sprintf(s, "Procedure");
 			break;
@@ -204,7 +223,8 @@ void env_display()
 		
 		printf("%s %s (", s, f_root->name);
 		display_args(f_root->args, 0);
-		if (f_root->ret_type != NONE)
+		printf(")");
+		if (f_root->ret_type->type != NONE)
 		{
 			printf(" :");
 			pp_type t_current = f_root->ret_type;
@@ -508,6 +528,22 @@ syna_node syna_newarray_node(syna_node type, syna_node expr)
 	return NULL;
 }
 
+void syna_link_args_to_func(pp_func func, syna_node args)
+{
+	switch (args->type) {
+		case NBRANCH:
+			syna_link_args_to_func(func, args->childs[1]);
+			syna_link_args_to_func(func, args->childs[0]);
+		break;
+		
+		case NVDEF:
+			syna_execute(args->childs[0]);
+			syna_execute(args->childs[1]);
+			lcl_add_variable(func, args->childs[0]->string, args->childs[1]->value_type);
+		break;
+	}
+}
+
 
 void syna_execute(syna_node root)
 {
@@ -639,10 +675,11 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NFDEF:
-			syna_execute(root->childs[0]);	//define args
 			syna_execute(root->childs[1]); //define ret type
 			root->value_type = root->childs[1]->value_type;
 			env_add_function(root->string, root->value_type, root->variable);
+			env_change_context(root->string);
+			syna_link_args_to_func(f_context, root->childs[0]);	//define args
 		break;
 	
 		case NPBODY:

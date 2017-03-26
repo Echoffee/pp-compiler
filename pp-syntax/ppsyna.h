@@ -29,6 +29,7 @@ struct s_pp_func{
 	pp_var context;
 	pp_var context_current;
 	pp_var args;		//reverse order
+	pp_var args_current;
 	struct s_pp_func* next;
 };
 
