@@ -149,9 +149,10 @@ void display_args(pp_var lcl_root, int rank)
 void env_display()
 {
 	printf("===== ENV =====\n");
-	while(f_root != NULL)
+	pp_func f = f_root;
+	while(f != NULL)
 	{
-		pp_var v_root = f_root->context;
+		pp_var v_root = f->context;
 		while (v_root != NULL)
 		{
 			
@@ -182,11 +183,11 @@ void env_display()
 				t_current = t_current->next;
 			}
 			
-			printf(" in context '%s'.\n", f_root->name);
+			printf(" in context '%s'.\n", f->name);
 			v_root = v_root->next;
 		}
 		
-		f_root = f_root->next;
+		f = f->next;
 	}
 	
 	while (f_root != NULL)
