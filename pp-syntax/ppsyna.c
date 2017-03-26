@@ -207,7 +207,7 @@ void env_display()
 		
 		f = f->next;
 	}
-	
+	printf("-----\n");
 	while (f_root != NULL)
 	{
 		char s[10];
@@ -254,6 +254,7 @@ void env_display()
 		f_root = f_root->next;
 	}
 	
+	printf("===== END =====\n");
 }
 
 //AST
@@ -671,7 +672,9 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NPDEF:
-						
+			env_add_function(root->string, syna_create_type(NONE, NULL), root->variable);
+			env_change_context(root->string);
+			syna_link_args_to_func(f_context, root->childs[0]);	//define args						
 		break;
 		
 		case NFDEF:
