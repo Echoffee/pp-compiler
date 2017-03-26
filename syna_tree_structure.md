@@ -1,0 +1,22 @@
+
+**.ROOT**
+- Global variables
+	- (Empty/Branches)
+		- VDEF
+			- NEW_VAR
+			- TYPE 
+- Functions/Procedures
+	- (Empty/Branches)
+		- PBODY/FBODY
+			- PDEF/FDEF	**Context change**
+				- (Empty/Branches)
+					- VDEF
+						- NEW_VAR
+						- TYPE
+				- (TYPE)
+			- (Empty/Branches)
+				- VDEF
+					- NEW_VAR
+					- TYPE
+			- C
+- C

@@ -87,7 +87,6 @@ pp_var env_get_variable(char* name)
 {
 	pp_func c = f_context;
 	pp_var v = c->context;
-	
 	while (v != NULL && strcmp(v->name, name))
 		v = v->next;
 		
@@ -302,7 +301,8 @@ syna_node syna_var_node(char* name)
 {
 	syna_node n = syna_create_node(0);
 	n->type = NVAR;
-	n->variable = env_get_variable(name);
+	//n->variable = env_get_variable(name);
+	n->string = strdup(name);
 	n->value_type = n->variable->type;
 	
 	return n;
@@ -470,7 +470,8 @@ syna_node syna_new_var_node(char* name)
 {
 	syna_node n = syna_create_node(0);
 	n->type = NNVAR;
-	n->variable = env_add_variable(name, syna_create_type(NONE, NULL));
+	n->string = strdup(name);
+	//n->variable = env_add_variable(name, syna_create_type(NONE, NULL));
 	
 	return n;
 }
@@ -606,6 +607,10 @@ void syna_execute(syna_node root)
 				  
 		break;
 		
+		case NNVAR:
+			fprintf(stderr, "slt\n");
+		break;
+		
 		case NVAF:
 			syna_execute(root->childs[1]);
 			syna_execute(root->childs[0]);
@@ -621,8 +626,10 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NVDEF:
+			root->childs[0]->variable = env_get_variable(root->childs[0]->string);
 			root->childs[0]->variable->type = root->value_type;
-			fprintf(stderr, "*******%d\n", root->childs[0]->variable->type->type);
+			//env_add_variable(root->childs[0]->variable->name, root->value_type);
+			fprintf(stderr, "*******%s\n", root->childs[0]->variable->name);
 			break;
 		
 		case NTYPE: 
@@ -642,16 +649,20 @@ void syna_execute(syna_node root)
 		case NPBODY:
 		syna_execute(root->childs[0]); //Function/Procedure declaration
 		//Needs to change context
+		env_change_context(root->childs[0]->string);
 		syna_execute(root->childs[1]); //Add local variables
 		//When called, must execute root->childs[3]
+		env_change_context("main_program");
 		break;
 		
 		case NFBODY:
 		syna_execute(root->childs[0]); //Function/Procedure declaration
 		//Needs to change context
+		env_change_context(root->childs[0]->string);
+		fprintf(stderr, "Context changed to %s\n", root->childs[0]->string);
 		syna_execute(root->childs[1]); //Add local variables
 		//When called, must execute root->childs[3]
-		
+		env_change_context("main_program");
 		break;
 	}
 }
