@@ -63,18 +63,17 @@ Et		: V B_OP E B_CL { $$ = syna_array_node(syna_var_node($1), $3); }
 		| Et B_OP E B_CL { $$ = syna_array_node($1, $3); }
 		;
 
-C		: C Se CC { $$ = syna_branch_node($1, $3); } /* previously C Se C -- shift-red conflict correction for (C Se C.)*/
-
+C		: C Se CC { $$ = syna_branch_node($1, $3); }
 		| CC { $$ = $1; }
-		| If E Th CC El CC { $$ = syna_ITE_node($2, $4, $6); }
-		| Wh E Do CC { $$ = syna_WD_node($2, $4); }
-		| V P_OP L_args P_CL { $$ = syna_call_func_node($1, $3); }
 		;
 
 CC		: Et Af E { $$ = syna_aaf_node($1, $3); }
 		| V Af E { $$ = syna_vaf_node(syna_var_node($1), $3); }
 		| Sk { $$ = syna_skip_node(); }
 		| A_OP C A_CL { $$ = syna_a_node($2); }
+		| If E Th CC El CC { $$ = syna_ITE_node($2, $4, $6); }
+		| Wh E Do CC { $$ = syna_WD_node($2, $4); }
+		| V P_OP L_args P_CL { $$ = syna_call_func_node($1, $3); }
 		;
 
 L_args	: %empty { $$ = syna_empty_node(); }
