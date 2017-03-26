@@ -629,7 +629,6 @@ void syna_execute(syna_node root)
 			root->childs[0]->variable = env_get_variable(root->childs[0]->string);
 			root->childs[0]->variable->type = root->value_type;
 			//env_add_variable(root->childs[0]->variable->name, root->value_type);
-			fprintf(stderr, "*******%s\n", root->childs[0]->variable->name);
 			break;
 		
 		case NTYPE: 
