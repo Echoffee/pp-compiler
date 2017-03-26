@@ -38,7 +38,7 @@
 %start MP
 %%
 
-MP		: L_vart LD C { syna_node r = syna_root_node($1, $2, $3); fprintf(stderr, "aaa");syna_execute(r);}
+MP		: L_vart LD C { syna_node r = syna_root_node($1, $2, $3); syna_execute(r);}
 		;
 
 E		: E Pl E { $$ = syna_opi_node($1, $3, PL); }

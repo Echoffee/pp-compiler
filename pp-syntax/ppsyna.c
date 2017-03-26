@@ -100,6 +100,7 @@ void env_change_context(char* context_name)
 			fprintf(stderr, "ERROR : Context '%s' not found\n", context_name);
 			
 		f_context = f;
+		fprintf(stderr, "Context changed to %s\n", f_context->name);
 }
 
 pp_var env_get_variable(char* name)
@@ -111,7 +112,8 @@ pp_var env_get_variable(char* name)
 		
 	if (v != NULL)
 		return v;
-	
+		
+	fprintf(stderr, "Variable not found in local context...\n");
 	env_change_context("main_program");
 	v = f_context->context;
 	while (v != NULL && strcmp(v->name, name))
@@ -120,6 +122,7 @@ pp_var env_get_variable(char* name)
 	if (v == NULL)
 		fprintf(stderr, "ERROR : Variable '%s' not found (current context : '%s')\n", name, c->name);
 		
+	fprintf(stderr, "Going back to local context...\n");
 	f_context = c;
 	v = env_add_variable(name, NONE);
 	return v;
@@ -532,11 +535,6 @@ syna_node syna_newarray_node(syna_node type, syna_node expr)
 void syna_link_args_to_func(pp_func func, syna_node args)
 {
 	switch (args->type) {
-		case NBRANCH:
-			syna_link_args_to_func(func, args->childs[1]);
-			syna_link_args_to_func(func, args->childs[0]);
-		break;
-		
 		case NVDEF:
 			syna_execute(args->childs[0]);
 			syna_execute(args->childs[1]);
@@ -664,11 +662,19 @@ void syna_execute(syna_node root)
 		
 		case NVDEF:
 			root->childs[0]->variable = env_get_variable(root->childs[0]->string);
+			if (root->childs[1] != NULL)
+				syna_execute(root->childs[1]);
+				
 			root->childs[0]->variable->type = root->value_type;
 			//env_add_variable(root->childs[0]->variable->name, root->value_type);
 			break;
 		
 		case NTYPE: 
+			if (root->childs[0] != NULL)
+			{
+				syna_execute(root->childs[0]);
+				root->value_type->next = root->childs[0]->value_type;
+			}
 		break;
 		
 		case NPDEF:
@@ -686,19 +692,16 @@ void syna_execute(syna_node root)
 		break;
 	
 		case NPBODY:
-		syna_execute(root->childs[0]); //Function/Procedure declaration
-		//Needs to change context
-		env_change_context(root->childs[0]->string);
+		syna_execute(root->childs[0]); //Procedure declaration
+		//Context already changed
 		syna_execute(root->childs[1]); //Add local variables
 		//When called, must execute root->childs[3]
 		env_change_context("main_program");
 		break;
 		
 		case NFBODY:
-		syna_execute(root->childs[0]); //Function/Procedure declaration
-		//Needs to change context
-		env_change_context(root->childs[0]->string);
-		fprintf(stderr, "Context changed to %s\n", root->childs[0]->string);
+		syna_execute(root->childs[0]); //Function declaration
+		//Context already changed
 		syna_execute(root->childs[1]); //Add local variables
 		//When called, must execute root->childs[3]
 		env_change_context("main_program");
