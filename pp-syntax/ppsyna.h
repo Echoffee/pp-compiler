@@ -7,6 +7,7 @@ typedef enum e_pp_type_id pp_type_id;
 typedef enum e_syna_opi syna_opi;
 typedef enum e_syna_opb syna_opb;
 typedef enum e_syna_node_id syna_node_id;
+typedef struct s_syna_node* syna_node;
 
 struct s_pp_type{
 	pp_type_id type;
@@ -30,6 +31,7 @@ struct s_pp_func{
 	pp_var context_current;
 	pp_var args;		//reverse order
 	pp_var args_current;
+	syna_node body;
 	struct s_pp_func* next;
 };
 
@@ -49,7 +51,6 @@ struct s_syna_node{
 	syna_opb opb;
 };
 
-typedef struct s_syna_node* syna_node;
 
 void env_initialize();
 pp_var env_add_variable(char* name, pp_type type);
