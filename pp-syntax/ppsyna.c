@@ -258,7 +258,10 @@ void env_display()
 			printf("\n{\n");
 			syna_display(f_root->body);
 			printf("\n}\n");
+		}else{
+			printf(";\n");
 		} 
+		
 		f_root = f_root->next;
 	}
 	
