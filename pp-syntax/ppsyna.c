@@ -335,7 +335,7 @@ syna_node syna_var_node(char* name)
 	n->type = NVAR;
 	//n->variable = env_get_variable(name);
 	n->string = strdup(name);
-	n->value_type = n->variable->type;
+	//n->value_type = n->variable->type;
 	
 	return n;
 }
@@ -657,7 +657,7 @@ void syna_execute(syna_node root)
 		case NVAF:
 			syna_execute(root->childs[1]);
 			syna_execute(root->childs[0]);
-			root->childs[0]->variable->type = root->childs[1]->value_type;
+			//root->childs[0]->variable->type = root->childs[1]->value_type;
 			break;
 		
 		case NSKIP:
