@@ -751,7 +751,7 @@ void syna_display(syna_node root)
 		
 		case NOPB:
 			syna_display(root->childs[0]);
-			switch (root->opi) {
+			switch (root->opb) {
 				case INONE:
 					//eh
 					break;
