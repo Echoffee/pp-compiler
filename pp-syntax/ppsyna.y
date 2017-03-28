@@ -54,8 +54,8 @@ E		: E Pl E { $$ = syna_opi_node($1, $3, PL); }
 		| V { $$ = syna_var_node($1); }
 		| V_TRUE { $$ = syna_bool_node(1); }
 		| V_FALSE { $$ = syna_bool_node(0); }
-		| V P_OP L_args P_CL { $$ = syna_call_func_node($1, $3); }//?????????????????????????????????????????
-		| NewAr TP B_OP E B_CL { $$ = syna_newarray_node($2, $4); }//???????????????????????????????????????
+		| V P_OP L_args P_CL { $$ = syna_call_func_node($1, $3); }
+		| NewAr TP B_OP E B_CL { $$ = syna_newarray_node($2, $4); }
 		| Et { $$ = $1; }
 		;
 
@@ -81,7 +81,7 @@ L_args	: %empty { $$ = syna_empty_node(); }
 		;
 
 L_argsnn: E { $$ = syna_expr_node($1); }
-		| E S_C L_argsnn { $$ = syna_branch_node($1, $3); } /* shift-red conflict correction. prev. L_argsnn S_C L_argsnn (??) */
+		| E S_C L_argsnn { $$ = syna_branch_node($1, $3); }
 		;
 
 L_argt	: %empty { $$ = syna_empty_node(); }
@@ -92,7 +92,7 @@ L_argtnn: Argt  { $$ = $1; }
 		| L_argtnn S_C Argt { $$ = syna_branch_node($1, $3); }
 		;
 
-Argt	: V S_DP TP { $$ = syna_vdef_node(syna_new_var_node($1), $3); } //var definition
+Argt	: V S_DP TP { $$ = syna_vdef_node(syna_new_var_node($1), $3); }
 		;
 
 TP		: T_boo { $$ = syna_type_node(BOOL, NULL); }
@@ -104,7 +104,7 @@ L_vart	: %empty { $$ = syna_empty_node(); }
 		| L_vartnn { $$ = $1; }
 		;
 
-L_vartnn: Var Argt { $$ = $2; }//def vars
+L_vartnn: Var Argt { $$ = $2; }
 		| L_vartnn S_C Var Argt { $$ = syna_branch_node($1, $4); }
 		;
 
