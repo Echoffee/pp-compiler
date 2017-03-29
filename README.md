@@ -40,8 +40,8 @@ Pex12 | ✔️	  |			|		|		 |		|
 Pex21 | ✔️	  |			|		|		 |		|
 Pex22 | ✔️	  |			|		|		 |		|
 Pex23 | ✔️	  |			|		|		 |		|
-Pex24 | ✖️	  |			|		|		 |		|
-Pex25 | ✖️	  |			|		|		 |		|
+Pex24 | 🀄	  |			|		|		 |		|
+Pex25 | 🀄	  |			|		|		 |		|
 
 ✔️ : Pass 
 
@@ -50,7 +50,8 @@ Pex25 | ✖️	  |			|		|		 |		|
 ✖️ : Crash / Important errors
 
 ## Issues
-
+- "new array" not displaying properly
+- ";" displaying instead of "," when calling functions/procedures
 
 ## Help and references
 

@@ -605,9 +605,11 @@ void syna_execute(syna_node root)
 			break;
 		
 		case NOPB:
-			syna_execute(root->childs[0]);
+			if (root->opb != NOT)
+				syna_execute(root->childs[0]);
+			
 			syna_execute(root->childs[1]);
-			switch (root->opi) {
+			switch (root->opb) {
 				case INONE:
 					//eh
 					break;
@@ -767,7 +769,9 @@ void syna_display(syna_node root)
 			break;
 		
 		case NOPB:
-			syna_display(root->childs[0]);
+			if (root->opb != NOT)
+				syna_display(root->childs[0]);
+			
 			switch (root->opb) {
 				case INONE:
 					//eh
