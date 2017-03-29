@@ -356,7 +356,7 @@ syna_node syna_array_node(syna_node member, syna_node index)
 	syna_node n = syna_create_node(2);
 	n->type = NARRAY;
 	n->childs[0] = member;
-	n->childs[1];
+	n->childs[1] = index;
 	
 	return n;
 }
@@ -746,15 +746,15 @@ void syna_display(syna_node root)
 					break;
 				
 				case PL:
-					printf(" +");
+					printf(" + ");
 					break;
 					
 				case MO:
-					printf(" -");
+					printf(" - ");
 					break;
 					
 				case MU:
-					printf(" *");
+					printf(" * ");
 					break;
 			}
 			
@@ -769,23 +769,23 @@ void syna_display(syna_node root)
 					break;
 				
 				case OR:
-					printf(" OR");
+					printf(" OR ");
 					break;
 				
 				case LT:
-					printf(" <=");
+					printf(" <= ");
 					break;
 				
 				case EQ:
-					printf(" ==");
+					printf(" == ");
 					break;
 				
 				case AND:
-					printf(" AND");
+					printf(" AND ");
 					break;
 				
 				case NOT:
-					printf(" ~");
+					printf("~");
 					break;
 			}
 			
@@ -799,24 +799,27 @@ void syna_display(syna_node root)
 		case NVALUE:
 			if (root->value_type->type == BOOL)
 				if (root->value == 1)
-					printf(" True");
+					printf("True");
 				else
-					printf(" False");
+					printf("False");
 			else
-				printf(" %d", root->value);
+				printf("%d", root->value);
 		break;
 		
 		case NVAR:
-			printf(" %s", root->string);
+			printf("%s", root->string);
 		break;
 		
 		case NARRAY:
-			  
+			syna_display(root->childs[0]); //array dim+ or var
+			printf("[");
+			syna_display(root->childs[1]); //index
+			printf("]");
 		break;
 		
 		case NBRANCH:
 			syna_display(root->childs[0]);
-			printf(";");
+			printf("; ");
 			syna_display(root->childs[1]);
 		break;
 		
@@ -845,7 +848,7 @@ void syna_display(syna_node root)
 		
 		case NVAF:
 			syna_display(root->childs[0]);
-			printf(" Af");
+			printf(" Af ");
 			syna_display(root->childs[1]);
 			break;
 		
