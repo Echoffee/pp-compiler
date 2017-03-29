@@ -532,12 +532,16 @@ syna_node syna_fbody_node(syna_node def, syna_node def_vars, syna_node body)
 
 syna_node syna_call_func_node(char* name, syna_node args)
 {
-	return NULL;
+	syna_node n = syna_create_node(0);
+	n->type = NFPCALL;
+	return n;
 }
 
 syna_node syna_newarray_node(syna_node type, syna_node expr)
 {
-	return NULL;
+	syna_node n = syna_create_node(0);
+	n->type = NNA;
+	return n;
 }
 
 void syna_link_args_to_func(pp_func func, syna_node args)
@@ -561,8 +565,11 @@ void syna_execute(syna_node root)
 		
 		case NROOT:
 			syna_execute(root->childs[0]);
+			fprintf(stderr, "End global vars\n");
 			syna_execute(root->childs[1]);
+			fprintf(stderr, "End funcs/pro\n");
 			syna_execute(root->childs[2]);
+			fprintf(stderr, "End global code\n");
 			break;
 		
 		case NOPI:
@@ -634,7 +641,9 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NBRANCH:
+			fprintf(stderr, "%d and %d\n", root->childs[0]->type, root->childs[1]->type);
 			syna_execute(root->childs[0]);
+			fprintf(stderr, "Pass first branch\n");
 			syna_execute(root->childs[1]);
 		break;
 		
@@ -655,8 +664,14 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NVAF:
+		fprintf(stderr, "%d\n", root->childs[0]->type);
+		fprintf(stderr, "%d\n", root->childs[1]->type);
+		
+			fprintf(stderr, "nvafinit\n");
 			syna_execute(root->childs[1]);
+			fprintf(stderr, "nvaf1\n");
 			syna_execute(root->childs[0]);
+			fprintf(stderr, "nvaf0\n");
 			//root->childs[0]->variable->type = root->childs[1]->value_type;
 			break;
 		
@@ -810,7 +825,7 @@ void syna_display(syna_node root)
 		case NITE:
 			printf(" If (");
 			syna_display(root->childs[0]);
-			printf(" Th {");
+			printf(") Th {");
 			syna_display(root->childs[1]);
 			printf("} El {");
 			syna_display(root->childs[2]);

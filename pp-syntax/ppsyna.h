@@ -1,7 +1,7 @@
 enum e_pp_type_id { NONE, INT, BOOL, ARRAY };
 enum e_syna_opi { INONE, PL, MO, MU };
 enum e_syna_opb { BNONE, OR, LT, EQ, AND, NOT};
-enum e_syna_node_id { NEMPTY, NROOT, NOPI, NOPB, NPBA, NVALUE, NVAR, NNVAR, NARRAY, NBRANCH, NITE, NWD, NAAF, NVAF, NSKIP, NEXPR, NVDEF, NTYPE, NPDEF, NFDEF, NPBODY, NFBODY};
+enum e_syna_node_id { NEMPTY, NROOT, NOPI, NOPB, NPBA, NVALUE, NVAR, NNVAR, NARRAY, NBRANCH, NITE, NWD, NAAF, NVAF, NSKIP, NEXPR, NVDEF, NTYPE, NPDEF, NFDEF, NPBODY, NFBODY, NFPCALL, NNA};
 
 typedef enum e_pp_type_id pp_type_id;
 typedef enum e_syna_opi syna_opi;
