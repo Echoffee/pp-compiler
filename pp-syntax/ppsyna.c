@@ -565,11 +565,8 @@ void syna_execute(syna_node root)
 		
 		case NROOT:
 			syna_execute(root->childs[0]);
-			fprintf(stderr, "End global vars\n");
 			syna_execute(root->childs[1]);
-			fprintf(stderr, "End funcs/pro\n");
 			syna_execute(root->childs[2]);
-			fprintf(stderr, "End global code\n");
 			break;
 		
 		case NOPI:
@@ -641,9 +638,7 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NBRANCH:
-			fprintf(stderr, "%d and %d\n", root->childs[0]->type, root->childs[1]->type);
 			syna_execute(root->childs[0]);
-			fprintf(stderr, "Pass first branch\n");
 			syna_execute(root->childs[1]);
 		break;
 		
@@ -664,14 +659,8 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NVAF:
-		fprintf(stderr, "%d\n", root->childs[0]->type);
-		fprintf(stderr, "%d\n", root->childs[1]->type);
-		
-			fprintf(stderr, "nvafinit\n");
 			syna_execute(root->childs[1]);
-			fprintf(stderr, "nvaf1\n");
 			syna_execute(root->childs[0]);
-			fprintf(stderr, "nvaf0\n");
 			//root->childs[0]->variable->type = root->childs[1]->value_type;
 			break;
 		

@@ -23,24 +23,31 @@ Deadline : **Monday, April 15th at 11:59pm**
 - Enhance memory usage of the Y86 program made with the compiler 
 
 ## Checklist
-### Syntax Analyser
-Feat | Status
-----|----
-Basic syntax recognition | :o:
-Variable 1d types | :o:
-Variable 2+d types | :o:
-Global variables | :o:
-Fun/Pro recognition | :o:
-Fun types | :o:
-Fun/Pro arguments | :o:
-Local variables | :o:
-Fun/Pro body | :o:
+Ex 	  | ppsyna | ppsema	 | ppina | ppc3ac | c3ai |
+------|--------|---------|-------|--------|------|
+Pex1  | ✔️ 	  |			|		|		 |		|
+Pex2  | ✔️ 	  |			|		|		 |		|
+Pex3  | ✔️ 	  |			|		|		 |		|
+Pex4  | ✔️ 	  |			|		|		 |		|
+Pex5  | ✔️ 	  |			|		|		 |		|
+Pex6  | ✔️ 	  |			|		|		 |		|
+Pex7  | ✔️ 	  |			|		|		 |		|
+Pex8  | ✔️ 	  |			|		|		 |		|
+Pex9  | ✔️ 	  |			|		|		 |		|
+Pex10 | 🀄	  |			|		|		 |		|
+Pex11 | 🀄 	  |			|		|		 |		|
+Pex12 | 🀄	  |			|		|		 |		|
+Pex21 | ✔️	  |			|		|		 |		|
+Pex22 | ✔️	  |			|		|		 |		|
+Pex23 | ✖️	  |			|		|		 |		|
+Pex24 | ✖️	  |			|		|		 |		|
+Pex25 | ✖️	  |			|		|		 |		|
 
-:o: Fully functional 
+✔️ : Pass 
 
-:mahjong: Partially functional
+🀄 : Partially functional
 
-:x: Not implemented
+✖️ : Crash / Notable errors
 
 ## Help and references
 
