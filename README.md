@@ -50,7 +50,6 @@ Pex25 | ✖️	  |			|		|		 |		|
 ✖️ : Crash / Important errors
 
 ## Issues
-- Array type variables not displaying
 
 
 ## Help and references
