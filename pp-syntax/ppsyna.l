@@ -40,7 +40,7 @@
 "}" { return A_CL; }
 "," { return S_C; }
 ":" { return S_DP; }
-"/*"(.*|\n)*"*/" { ;} /* (dirty) allows comments on input files */
+"/*"[^("/*")]*"*/" { ;} /* (dirty) allows comments on input files */
 [0-9]* { yylval.ival = atoi(yytext); return I; }
 [a-zA-Z\_][a-zA-Z0-9\_]* { yylval.sval = strdup(yytext); return T_str; }
 
