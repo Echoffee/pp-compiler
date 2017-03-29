@@ -532,8 +532,11 @@ syna_node syna_fbody_node(syna_node def, syna_node def_vars, syna_node body)
 
 syna_node syna_call_func_node(char* name, syna_node args)
 {
-	syna_node n = syna_create_node(0);
+	syna_node n = syna_create_node(1);
 	n->type = NFPCALL;
+	n->string = strdup(name);
+	n->childs[0] = args;
+	
 	return n;
 }
 
@@ -808,6 +811,7 @@ void syna_display(syna_node root)
 		
 		case NBRANCH:
 			syna_display(root->childs[0]);
+			printf(";");
 			syna_display(root->childs[1]);
 		break;
 		
@@ -847,6 +851,11 @@ void syna_display(syna_node root)
 		case NEXPR:
 			syna_display(root->childs[0]);
 		break;
+		
+		case NFPCALL:
+			printf(" %s(", root->string);
+			syna_display(root->childs[0]);
+			printf(")");
 		
 	}
 }
