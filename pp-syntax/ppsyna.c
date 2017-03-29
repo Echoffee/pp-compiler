@@ -87,23 +87,24 @@ pp_var env_add_lcl_variable(pp_var lcl_parent, char* name, pp_type type)
 void env_initialize()
 {
 	env_add_function("main_program", syna_create_type(NONE, NULL), NULL);
-	env_change_context("main_program");
+	env_change_context("main_program", 0);
 }
 
-void env_change_context(char* context_name)
+void env_change_context(char* context_name, int debug)
 {
 		pp_func f = f_root;
 		while (f != NULL && strcmp(f->name, context_name))
 			f = f->next;
 			
-		if (f == NULL)
+		if (f == NULL && debug)
 			fprintf(stderr, "ERROR : Context '%s' not found\n", context_name);
 			
 		f_context = f;
-		fprintf(stderr, "Context changed to %s\n", f_context->name);
+		if (debug)
+			fprintf(stderr, "Context changed to %s\n", f_context->name);
 }
 
-pp_var env_get_variable(char* name)
+pp_var env_get_variable(char* name, int debug)
 {
 	pp_func c = f_context;
 	pp_var v = c->context;
@@ -112,17 +113,21 @@ pp_var env_get_variable(char* name)
 		
 	if (v != NULL)
 		return v;
-		
-	fprintf(stderr, "Variable not found in local context...\n");
-	env_change_context("main_program");
+	
+	if (debug)
+		fprintf(stderr, "Variable not found in local context...\n");
+	
+	env_change_context("main_program", debug);
 	v = f_context->context;
 	while (v != NULL && strcmp(v->name, name))
 		v = v->next;
 	
-	if (v == NULL)
+	if (v == NULL && debug)
 		fprintf(stderr, "ERROR : Variable '%s' not found (current context : '%s')\n", name, c->name);
 		
-	fprintf(stderr, "Going back to local context...\n");
+	if (debug)
+		fprintf(stderr, "Going back to local context...\n");
+	
 	f_context = c;
 	v = env_add_variable(name, NONE);
 	return v;
@@ -681,7 +686,7 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NVDEF:
-			root->childs[0]->variable = env_get_variable(root->childs[0]->string);
+			root->childs[0]->variable = env_get_variable(root->childs[0]->string, 0);
 			if (root->childs[1] != NULL)
 				syna_execute(root->childs[1]);
 				
@@ -699,7 +704,7 @@ void syna_execute(syna_node root)
 		
 		case NPDEF:
 			env_add_function(root->string, syna_create_type(NONE, NULL), root->variable);
-			env_change_context(root->string);
+			env_change_context(root->string, 0);
 			syna_link_args_to_func(f_context, root->childs[0]);	//define args						
 		break;
 		
@@ -707,7 +712,7 @@ void syna_execute(syna_node root)
 			syna_execute(root->childs[1]); //define ret type
 			root->value_type = root->childs[1]->value_type;
 			env_add_function(root->string, root->value_type, root->variable);
-			env_change_context(root->string);
+			env_change_context(root->string, 0);
 			syna_link_args_to_func(f_context, root->childs[0]);	//define args
 		break;
 	
@@ -717,7 +722,7 @@ void syna_execute(syna_node root)
 		syna_execute(root->childs[1]); //Add local variables
 		//When called, must execute root->childs[2]
 		f_context->body = root->childs[2];
-		env_change_context("main_program");
+		env_change_context("main_program", 0);
 		break;
 		
 		case NFBODY:
@@ -726,7 +731,7 @@ void syna_execute(syna_node root)
 		syna_execute(root->childs[1]); //Add local variables
 		//When called, must execute root->childs[2]
 		f_context->body = root->childs[2];
-		env_change_context("main_program");
+		env_change_context("main_program", 0);
 		break;
 	}
 }
