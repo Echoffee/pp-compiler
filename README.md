@@ -33,9 +33,9 @@ Pex5  | ✔️ 	  |			|		|		 |		|
 Pex6  | ✔️ 	  |			|		|		 |		|
 Pex7  | ✔️ 	  |			|		|		 |		|
 Pex8  | ✔️ 	  |			|		|		 |		|
-Pex9  | 🀄 	  |			|		|		 |		|
+Pex9  | ✔️ 	  |			|		|		 |		|
 Pex10 | ✔️	  |			|		|		 |		|
-Pex11 | 🀄 	  |			|		|		 |		|
+Pex11 | ✔️ 	  |			|		|		 |		|
 Pex12 | 🀄	  |			|		|		 |		|
 Pex21 | 🀄	  |			|		|		 |		|
 Pex22 | 🀄	  |			|		|		 |		|
@@ -50,7 +50,7 @@ Pex25 | ✖️	  |			|		|		 |		|
 ✖️ : Crash / Important errors
 
 ## Issues
-- Functions/Procedures with more than one argument do not display them
+- Array type variables not displaying
 
 
 ## Help and references

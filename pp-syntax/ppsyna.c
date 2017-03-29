@@ -550,6 +550,11 @@ syna_node syna_newarray_node(syna_node type, syna_node expr)
 void syna_link_args_to_func(pp_func func, syna_node args)
 {
 	switch (args->type) {
+		case NBRANCH:
+			syna_link_args_to_func(func, args->childs[1]);
+			syna_link_args_to_func(func, args->childs[0]);
+			break;
+			
 		case NVDEF:
 			syna_execute(args->childs[0]);
 			syna_execute(args->childs[1]);
@@ -788,7 +793,7 @@ void syna_display(syna_node root)
 			break;
 		
 		case NPBA:
-		   syna_execute(root->childs[0]);
+		   syna_display(root->childs[0]);
 		break;
 		
 		case NVALUE:
