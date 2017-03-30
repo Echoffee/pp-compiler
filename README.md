@@ -5,7 +5,7 @@
 # Subject
 [Link](http://dept-info.labri.fr/ENSEIGNEMENT/compi/projet.pdf).
 
-Deadline : **Monday, April 15th at 11:59pm**
+Deadline : **Monday, April 10th at 11:59pm**
 
 ## Required work
 
