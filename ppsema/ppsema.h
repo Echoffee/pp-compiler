@@ -89,5 +89,5 @@ syna_node syna_call_func_node(char* name, syna_node args);
 syna_node syna_newarray_node(syna_node type, syna_node expr);
 
 void syna_execute(syna_node root);
-void syna_display(syna_node root);
-void env_display();
+void err_display();
+void err_report();

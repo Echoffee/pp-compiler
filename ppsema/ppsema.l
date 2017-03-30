@@ -1,5 +1,5 @@
 %{
-	#include "ppsyna.tab.h"
+	#include "ppsema.tab.h"
 	#define YY_DECL int yylex()
 %}
 %%

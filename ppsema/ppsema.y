@@ -2,7 +2,7 @@
 
 %{
 	#include <stdio.h>
-	#include "ppsyna.h"
+	#include "ppsema.h"
 
 	int yylex();
 	int yyerror(char* s);
@@ -143,7 +143,6 @@ int main()
 {
 	env_initialize();
 	yyparse();
-	env_display();
-
+	err_report();
 	return 0;
 }

@@ -1,13 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ppsyna.h"
+#include "ppsema.h"
 
 pp_func f_context = NULL;
 pp_func f_root = NULL;
 pp_func f_current = NULL;
 
 int in_fuction_call = 0;
+int total_errors = 0;
 
 pp_type syna_create_type(pp_type_id type, pp_type next)
 {
@@ -106,6 +107,34 @@ void env_change_context(char* context_name, int debug)
 			fprintf(stderr, "Context changed to %s\n", f_context->name);
 }
 
+pp_func env_get_function(char* context_name, int debug)
+{
+		pp_func f = f_root;
+		char* s = (char*) malloc(sizeof(char) * 512);
+		while (f != NULL && strcmp(f->name, context_name))
+			f = f->next;
+			
+		if (f == NULL && debug)
+		{
+			sprintf(s, "ERROR : Context '%s' not found\n", context_name);
+			err_display(s);
+		}
+			
+		return f;
+}
+
+int env_get_args_number(pp_func f)
+{
+	int result = 0;
+	pp_var v = f->args;
+	while(v != NULL)
+	{
+		result++;
+	}
+	
+	return result;
+}
+
 pp_var env_get_variable(char* name, int debug)
 {
 	pp_func c = f_context;
@@ -172,107 +201,6 @@ void display_args(pp_var lcl_root, int rank)
 		if (rank > 0)
 			printf(", ");
 	}
-}
-
-void env_display()
-{
-	printf("===== ENV =====\n");
-	pp_func f = f_root;
-	while(f != NULL)
-	{
-		pp_var v_root = f->context;
-		while (v_root != NULL)
-		{
-			
-			printf("Var %s of type", v_root->name);
-			pp_type t_current = v_root->type;
-			while (t_current != NULL)
-			{
-				char s[9];
-				switch (t_current->type) {
-					case NONE:
-					sprintf(s, "none");
-					break;
-					
-					case INT:
-					sprintf(s, "integer");
-					break;
-					
-					case BOOL:
-					sprintf(s, "boolean");
-					break;
-					
-					case ARRAY:
-					sprintf(s, "array of");
-					break;
-				}
-				
-				printf(" %s", s);
-				t_current = t_current->next;
-			}
-			
-			printf(" in context '%s'.\n", f->name);
-			v_root = v_root->next;
-		}
-		
-		f = f->next;
-	}
-	printf("-----\n");
-	while (f_root != NULL)
-	{
-		char s[10];
-		switch (f_root->ret_type->type) {
-			case NONE:
-			sprintf(s, "Procedure");
-			break;
-			
-			default:
-			sprintf(s, "Function");
-			break;
-		}
-		
-		printf("%s %s (", s, f_root->name);
-		display_args(f_root->args, 0);
-		printf(")");
-		if (f_root->ret_type->type != NONE)
-		{
-			printf(" :");
-			pp_type t_current = f_root->ret_type;
-			while (t_current != NULL)
-			{
-				char s[9];
-				switch (t_current->type) {
-					case INT:
-					sprintf(s, "integer");
-					break;
-					
-					case BOOL:
-					sprintf(s, "boolean");
-					break;
-					
-					case ARRAY:
-					sprintf(s, "array of");
-					break;
-				}
-				
-				printf(" %s", s);
-				t_current = t_current->next;
-			}
-		}
-		
-		if (f_root->body != NULL)
-		{
-			printf("\n{\n");
-			syna_display(f_root->body);
-			printf("\n}\n");
-		}else{
-			printf(";\n");
-		} 
-		
-		f_root = f_root->next;
-	}
-	
-	printf("===== END =====\n");
 }
 
 //AST
@@ -572,6 +500,91 @@ void syna_link_args_to_func(pp_func func, syna_node args)
 	}
 }
 
+char* err_display_type(pp_type type)
+{
+	char* result = (char*) malloc(sizeof(char) * 512);
+	while (type != NULL)
+	{
+		char* s;
+		switch (type->type) {
+			case NONE:
+				s = strdup("null");
+			break;
+			
+			case INT:
+				s = strdup("integer");
+			break;
+			
+			case BOOL:
+				s = strdup("boolean");
+			break;
+			
+			case ARRAY:
+				s = strdup("array of");
+			break;
+		}
+		
+		sprintf(result, "%s %s", result, s);
+		type = type->next;
+	}
+	
+	return result;
+}
+
+void err_check_type(pp_type n, pp_type type)
+{
+	if (n->type != type->type)
+	{
+		char* s = (char*) malloc(sizeof(char) * 512);
+		sprintf(s, "Incorrect type : expected type %s but got %s.", err_display_type(type), err_display_type(n));
+		err_display(s);
+		return;
+	}
+	
+	if (type->type == ARRAY)
+		err_check_type(n->next, type->next);
+	
+}
+
+void err_check_single_argument(syna_node arg, pp_func f, int index)
+{
+	pp_var v = f->args;
+	int i = 0;
+	while (i < index)
+	{
+		i++;
+		v = v->next;
+	}
+	
+	err_check_type(arg->value_type, v->type);
+}
+
+int err_check_arguments(syna_node arg_node, pp_func f, int rank, int rank_max)
+{
+	int b1 = (rank == rank_max?1:0);
+	int b2 = 0;
+	if (rank > rank_max)
+	{
+		char* s = (char*) malloc(sizeof(char) * 512);
+		sprintf(s, "Too many arguments : expected %d arguments for %s.", rank_max, f->name);
+		err_display(s);
+		return 0;
+	}
+	
+	switch (arg_node->type) {
+		case NBRANCH:
+			b1 = err_check_arguments(arg_node->childs[0], f, rank, rank_max);
+			rank++;
+			b2 = err_check_arguments(arg_node->childs[1], f, rank, rank_max);
+		break;
+		
+		default:
+			err_check_single_argument(arg_node, f, rank);
+		break;
+	}
+	
+	return b1 + b2;
+}
 
 void syna_execute(syna_node root)
 {
@@ -587,78 +600,49 @@ void syna_execute(syna_node root)
 			break;
 		
 		case NOPI:
+			//Check if both values are of type Integer 
 			syna_execute(root->childs[0]);
 			syna_execute(root->childs[1]);
-			switch (root->opi) {
-				case INONE:
-					//eh
-					break;
-				
-				case PL:
-					//root->value = root->childs[0]->value + root->childs[1]->value;
-					break;
-					
-				case MO:
-					//root->value = root->childs[0]->value - root->childs[1]->value;
-					break;
-					
-				case MU:
-					//root->value = root->childs[0]->value * root->childs[1]->value;
-					break;
-			}
-			break;
+			err_check_type(root->childs[0]->value_type, syna_create_type(INT, NULL));
+			err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL));
+		break;
 		
 		case NOPB:
+			//Check if both values are of type Boolean
 			if (root->opb != NOT)
 				syna_execute(root->childs[0]);
 			
 			syna_execute(root->childs[1]);
-			switch (root->opb) {
-				case INONE:
-					//eh
-					break;
-				
-				case OR:
-					//root->value = (root->childs[1]->value + root->childs[0]->value > 0? 1 : 0);
-					break;
-				
-				case LT:
-					//root->value = (root->childs[1]->value < root->childs[0]->value? 1 : 0);
-					break;
-				
-				case EQ:
-					//root->value = (root->childs[1]->value == root->childs[0]->value? 1 : 0);
-					break;
-				
-				case AND:
-					//root->value = (root->childs[1]->value * root->childs[0]->value > 0? 1 : 0);
-					break;
-				
-				case NOT:
-					//root->value = 0;
-					break;
-			}
-			break;
+			err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
+			err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));			
+		break;
 		
 		case NPBA:
 		   syna_execute(root->childs[0]);
 		break;
 		
 		case NVALUE:
-			//end
-		break;
-		
-		case NVAR:
+			//Check type ?
 			
 		break;
 		
+		case NVAR:
+			{
+			//Check type
+			pp_var v = env_get_variable(root->string, 1);
+			root->value_type = v->type;	
+			}
+		break;
+		
 		case NARRAY:
-			  
+			//Check type ?
 		break;
 		
 		case NNA:
+			//Check if both arrays are of the same type
 			syna_execute(root->childs[0]);
 			syna_execute(root->childs[1]);
+			err_check_type(root->childs[1]->value_type, root->childs[0]->value_type);
 		break;
 		
 		case NBRANCH:
@@ -667,25 +651,35 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NITE:
-				
+			//Check if condition is of type Boolean
+			syna_execute(root->childs[0]);
+			err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
+			syna_execute(root->childs[1]);
+			syna_execute(root->childs[2]);
 		break;
 		
 		case NWD:
-				 
+			//Check if condition is of type Boolean
+			syna_execute(root->childs[0]);
+			err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
+			syna_execute(root->childs[1]);
 		break;
 		
 		case NAAF:
+			//Check if value and destination are of same type
 			syna_execute(root->childs[1]);
 		break;
 		
 		case NNVAR:
+			//Check if value and destination are of same type
 
 		break;
 		
 		case NVAF:
+			//Check if value and destination are of same type
 			syna_execute(root->childs[1]);
 			syna_execute(root->childs[0]);
-			//root->childs[0]->variable->type = root->childs[1]->value_type;
+			err_check_type(root->childs[1]->value_type, root->childs[0]->value_type);
 			break;
 		
 		case NSKIP:
@@ -702,7 +696,6 @@ void syna_execute(syna_node root)
 				syna_execute(root->childs[1]);
 				
 			root->childs[0]->variable->type = root->value_type;
-			//env_add_variable(root->childs[0]->variable->name, root->value_type);
 			break;
 		
 		case NTYPE: 
@@ -716,7 +709,7 @@ void syna_execute(syna_node root)
 		case NPDEF:
 			env_add_function(root->string, syna_create_type(NONE, NULL), root->variable);
 			env_change_context(root->string, 0);
-			syna_link_args_to_func(f_context, root->childs[0]);	//define args						
+			syna_link_args_to_func(f_context, root->childs[0]);	//define args
 		break;
 		
 		case NFDEF:
@@ -746,182 +739,28 @@ void syna_execute(syna_node root)
 		syna_execute(root->childs[2]);
 		env_change_context("main_program", 0);
 		break;
+		
+		case NFPCALL:
+		{
+			//syna_execute(root->childs[0]);
+			pp_func f = env_get_function(root->string, 1);
+			root->value_type = f->ret_type;
+			err_check_arguments(root->childs[0], f, 0, env_get_args_number(f));
+		}
+		break;
 	}
 }
 
-void syna_display(syna_node root)
+void err_display(char* s)
 {
-	switch (root->type) {
-		case NEMPTY:
-			//eh
-			break;
-		
-		case NOPI:
-			syna_display(root->childs[0]);
-			switch (root->opi) {
-				case INONE:
-					//eh
-					break;
-				
-				case PL:
-					printf(" + ");
-					break;
-					
-				case MO:
-					printf(" - ");
-					break;
-					
-				case MU:
-					printf(" * ");
-					break;
-			}
-			
-			syna_display(root->childs[1]);
-			break;
-		
-		case NOPB:
-			if (root->opb != NOT)
-				syna_display(root->childs[0]);
-			
-			switch (root->opb) {
-				case INONE:
-					//eh
-					break;
-				
-				case OR:
-					printf(" OR ");
-					break;
-				
-				case LT:
-					printf(" <= ");
-					break;
-				
-				case EQ:
-					printf(" == ");
-					break;
-				
-				case AND:
-					printf(" AND ");
-					break;
-				
-				case NOT:
-					printf("~");
-					break;
-			}
-			
-			syna_display(root->childs[1]);
-			break;
-		
-		case NPBA:
-		   syna_display(root->childs[0]);
-		break;
-		
-		case NVALUE:
-			if (root->value_type->type == BOOL)
-				if (root->value == 1)
-					printf("True");
-				else
-					printf("False");
-			else
-				printf("%d", root->value);
-		break;
-		
-		case NVAR:
-			printf("%s", root->string);
-		break;
-		
-		case NARRAY:
-			syna_display(root->childs[0]); //array dim+ or var
-			printf("[");
-			syna_display(root->childs[1]); //index
-			printf("]");
-		break;
-		
-		case NNA:
-			printf("NewArray of ");
-			syna_display(root->childs[0]);
-			printf("[");
-			syna_display(root->childs[1]);
-			printf("]");
-		break;
-		
-		case NBRANCH:
-			syna_display(root->childs[0]);
-			if (in_fuction_call)
-				printf(", ");
-			else
-				printf("; ");
-			
-			syna_display(root->childs[1]);
-		break;
-		
-		case NITE:
-			printf(" If (");
-			syna_display(root->childs[0]);
-			printf(") Th {");
-			syna_display(root->childs[1]);
-			printf("} El {");
-			syna_display(root->childs[2]);
-			printf("}");
-		break;
-		
-		case NWD:
-			printf(" Wh (");
-			syna_display(root->childs[0]);
-			printf(") Do {");
-			syna_display(root->childs[1]);
-			printf("}");
-		break;
-		
-		case NAAF:
-			syna_display(root->childs[0]);
-			syna_display(root->childs[1]);
-		break;
-		
-		case NVAF:
-			syna_display(root->childs[0]);
-			printf(" Af ");
-			syna_display(root->childs[1]);
-			break;
-		
-		case NSKIP:
-			printf(" Sk");
-			break;
-		
-		case NEXPR:
-			syna_display(root->childs[0]);
-		break;
-		
-		case NTYPE:
-		{
-			pp_type t = root->value_type;
-			while (t != NULL){
-				switch (t->type) {
-					case INT:
-						printf("Integer");
-					break;
-				
-					case BOOL:
-						printf("Boolean");
-					break;
-				
-					case ARRAY:
-						printf("Array of ");
-					break;
-				}
-				
-				t = t->next;
-			}
-		}
-		break;
-		
-		case NFPCALL:
-			printf(" %s(", root->string);
-			in_fuction_call = 1;
-			syna_display(root->childs[0]);
-			printf(")");
-			in_fuction_call = 0;
-		break;
-		
-	}
+	fprintf(stderr, "***ERROR: %s***\n", s);
+	total_errors++;
+}
+
+void err_report()
+{
+	if (!total_errors)
+		printf("No error found.\n");
+	else
+		printf("%d error%s found.\n", total_errors, (total_errors>2?"s":""));
 }

@@ -25,23 +25,23 @@ Deadline : **Monday, April 10th at 11:59pm**
 ## Checklist
 Ex 	  | ppsyna | ppsema	 | ppina | ppc3ac | c3ai |
 ------|--------|---------|-------|--------|------|
-Pex1  | ✔️ 	  |			|		|		 |		|
-Pex2  | ✔️ 	  |			|		|		 |		|
-Pex3  | ✔️ 	  |			|		|		 |		|
-Pex4  | ✔️ 	  |			|		|		 |		|
-Pex5  | ✔️ 	  |			|		|		 |		|
-Pex6  | ✔️ 	  |			|		|		 |		|
-Pex7  | ✔️ 	  |			|		|		 |		|
-Pex8  | ✔️ 	  |			|		|		 |		|
-Pex9  | ✔️ 	  |			|		|		 |		|
-Pex10 | ✔️	  |			|		|		 |		|
-Pex11 | ✔️ 	  |			|		|		 |		|
-Pex12 | ✔️	  |			|		|		 |		|
-Pex21 | ✔️	  |			|		|		 |		|
-Pex22 | ✔️	  |			|		|		 |		|
-Pex23 | ✔️	  |			|		|		 |		|
-Pex24 | ✔️	  |			|		|		 |		|
-Pex25 | ✔️	  |			|		|		 |		|
+Pex1  | ✔️ 	  |	✔️		|		|		 |		|
+Pex2  | ✔️ 	  |	✔️		|		|		 |		|
+Pex3  | ✔️ 	  |	✖️		|		|		 |		|
+Pex4  | ✔️ 	  |	✖️		|		|		 |		|
+Pex5  | ✔️ 	  |	✖️		|		|		 |		|
+Pex6  | ✔️ 	  |	✖️		|		|		 |		|
+Pex7  | ✔️ 	  |	✖️		|		|		 |		|
+Pex8  | ✔️ 	  |	✔️		|		|		 |		|
+Pex9  | ✔️ 	  |	✖️		|		|		 |		|
+Pex10 | ✔️	  |	✖️		|		|		 |		|
+Pex11 | ✔️ 	  |	✖️		|		|		 |		|
+Pex12 | ✔️	  |	✖️		|		|		 |		|
+Pex21 | ✔️	  |	✖️		|		|		 |		|
+Pex22 | ✔️	  |	✖️		|		|		 |		|
+Pex23 | ✔️	  |	✖️		|		|		 |		|
+Pex24 | ✔️	  |	✖️		|		|		 |		|
+Pex25 | ✔️	  |	✖️		|		|		 |		|
 
 ✔️ : Pass 
 
@@ -51,6 +51,8 @@ Pex25 | ✔️	  |			|		|		 |		|
 
 ## Issues
 - [#ba610bd7](https://github.com/Echoffee/pp-compiler/commit/ba610bd799cef48539d7e537eecc1285ef51a5e2)
+- Crashes when dealing with array members (ie v[x])
+- Crashes when dealing with arguments as variables in functions/procedures. 
 
 ## Help and references
 
