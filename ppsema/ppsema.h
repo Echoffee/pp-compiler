@@ -56,10 +56,10 @@ void env_initialize();
 pp_var env_add_variable(char* name, pp_type type);
 void env_add_function(char* name, pp_type ret_type, pp_var args);
 pp_var env_add_lcl_variable(pp_var lcl_parent, char* name, pp_type type);
-pp_type env_get_type_of_variable(char* name);
-pp_type env_get_type_of_function(char* name);
+pp_type env_get_type_of_variable(char* name, int debug);
+pp_type env_get_type_of_function(char* name, int debug);
 void env_change_scope(char* scope);
-void env_change_context(char* context);
+void env_change_context(char* context, int debug);
 
 syna_node syna_opi_node(syna_node member_left, syna_node member_right, syna_opi op);
 syna_node syna_opb_node(syna_node member_left, syna_node member_right, syna_opb op);

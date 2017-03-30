@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ppsema.h"
+#include "ppsyna.h"
 
 pp_func f_context = NULL;
 pp_func f_root = NULL;
 pp_func f_current = NULL;
+
+int in_fuction_call = 0;
 
 pp_type syna_create_type(pp_type_id type, pp_type next)
 {
@@ -87,23 +89,24 @@ pp_var env_add_lcl_variable(pp_var lcl_parent, char* name, pp_type type)
 void env_initialize()
 {
 	env_add_function("main_program", syna_create_type(NONE, NULL), NULL);
-	env_change_context("main_program");
+	env_change_context("main_program", 0);
 }
 
-void env_change_context(char* context_name)
+void env_change_context(char* context_name, int debug)
 {
 		pp_func f = f_root;
 		while (f != NULL && strcmp(f->name, context_name))
 			f = f->next;
 			
-		if (f == NULL)
+		if (f == NULL && debug)
 			fprintf(stderr, "ERROR : Context '%s' not found\n", context_name);
 			
 		f_context = f;
-		fprintf(stderr, "Context changed to %s\n", f_context->name);
+		if (debug)
+			fprintf(stderr, "Context changed to %s\n", f_context->name);
 }
 
-pp_var env_get_variable(char* name)
+pp_var env_get_variable(char* name, int debug)
 {
 	pp_func c = f_context;
 	pp_var v = c->context;
@@ -112,17 +115,21 @@ pp_var env_get_variable(char* name)
 		
 	if (v != NULL)
 		return v;
-		
-	fprintf(stderr, "Variable not found in local context...\n");
-	env_change_context("main_program");
+	
+	if (debug)
+		fprintf(stderr, "Variable not found in local context...\n");
+	
+	env_change_context("main_program", debug);
 	v = f_context->context;
 	while (v != NULL && strcmp(v->name, name))
 		v = v->next;
 	
-	if (v == NULL)
+	if (v == NULL && debug)
 		fprintf(stderr, "ERROR : Variable '%s' not found (current context : '%s')\n", name, c->name);
 		
-	fprintf(stderr, "Going back to local context...\n");
+	if (debug)
+		fprintf(stderr, "Going back to local context...\n");
+	
 	f_context = c;
 	v = env_add_variable(name, NONE);
 	return v;
@@ -356,7 +363,7 @@ syna_node syna_array_node(syna_node member, syna_node index)
 	syna_node n = syna_create_node(2);
 	n->type = NARRAY;
 	n->childs[0] = member;
-	n->childs[1];
+	n->childs[1] = index;
 	
 	return n;
 }
@@ -532,17 +539,31 @@ syna_node syna_fbody_node(syna_node def, syna_node def_vars, syna_node body)
 
 syna_node syna_call_func_node(char* name, syna_node args)
 {
-	return NULL;
+	syna_node n = syna_create_node(1);
+	n->type = NFPCALL;
+	n->string = strdup(name);
+	n->childs[0] = args;
+	
+	return n;
 }
 
 syna_node syna_newarray_node(syna_node type, syna_node expr)
 {
-	return NULL;
+	syna_node n = syna_create_node(2);
+	n->type = NNA;
+	n->childs[0] = type;
+	n->childs[1] = expr;
+	return n;
 }
 
 void syna_link_args_to_func(pp_func func, syna_node args)
 {
 	switch (args->type) {
+		case NBRANCH:
+			syna_link_args_to_func(func, args->childs[1]);
+			syna_link_args_to_func(func, args->childs[0]);
+			break;
+			
 		case NVDEF:
 			syna_execute(args->childs[0]);
 			syna_execute(args->childs[1]);
@@ -588,9 +609,11 @@ void syna_execute(syna_node root)
 			break;
 		
 		case NOPB:
-			syna_execute(root->childs[0]);
+			if (root->opb != NOT)
+				syna_execute(root->childs[0]);
+			
 			syna_execute(root->childs[1]);
-			switch (root->opi) {
+			switch (root->opb) {
 				case INONE:
 					//eh
 					break;
@@ -633,6 +656,11 @@ void syna_execute(syna_node root)
 			  
 		break;
 		
+		case NNA:
+			syna_execute(root->childs[0]);
+			syna_execute(root->childs[1]);
+		break;
+		
 		case NBRANCH:
 			syna_execute(root->childs[0]);
 			syna_execute(root->childs[1]);
@@ -647,7 +675,7 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NAAF:
-				  
+			syna_execute(root->childs[1]);
 		break;
 		
 		case NNVAR:
@@ -669,7 +697,7 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NVDEF:
-			root->childs[0]->variable = env_get_variable(root->childs[0]->string);
+			root->childs[0]->variable = env_get_variable(root->childs[0]->string, 0);
 			if (root->childs[1] != NULL)
 				syna_execute(root->childs[1]);
 				
@@ -687,7 +715,7 @@ void syna_execute(syna_node root)
 		
 		case NPDEF:
 			env_add_function(root->string, syna_create_type(NONE, NULL), root->variable);
-			env_change_context(root->string);
+			env_change_context(root->string, 0);
 			syna_link_args_to_func(f_context, root->childs[0]);	//define args						
 		break;
 		
@@ -695,7 +723,7 @@ void syna_execute(syna_node root)
 			syna_execute(root->childs[1]); //define ret type
 			root->value_type = root->childs[1]->value_type;
 			env_add_function(root->string, root->value_type, root->variable);
-			env_change_context(root->string);
+			env_change_context(root->string, 0);
 			syna_link_args_to_func(f_context, root->childs[0]);	//define args
 		break;
 	
@@ -705,7 +733,8 @@ void syna_execute(syna_node root)
 		syna_execute(root->childs[1]); //Add local variables
 		//When called, must execute root->childs[2]
 		f_context->body = root->childs[2];
-		env_change_context("main_program");
+		syna_execute(root->childs[2]);
+		env_change_context("main_program", 0);
 		break;
 		
 		case NFBODY:
@@ -714,7 +743,8 @@ void syna_execute(syna_node root)
 		syna_execute(root->childs[1]); //Add local variables
 		//When called, must execute root->childs[2]
 		f_context->body = root->childs[2];
-		env_change_context("main_program");
+		syna_execute(root->childs[2]);
+		env_change_context("main_program", 0);
 		break;
 	}
 }
@@ -734,15 +764,15 @@ void syna_display(syna_node root)
 					break;
 				
 				case PL:
-					printf(" +");
+					printf(" + ");
 					break;
 					
 				case MO:
-					printf(" -");
+					printf(" - ");
 					break;
 					
 				case MU:
-					printf(" *");
+					printf(" * ");
 					break;
 			}
 			
@@ -750,30 +780,32 @@ void syna_display(syna_node root)
 			break;
 		
 		case NOPB:
-			syna_display(root->childs[0]);
+			if (root->opb != NOT)
+				syna_display(root->childs[0]);
+			
 			switch (root->opb) {
 				case INONE:
 					//eh
 					break;
 				
 				case OR:
-					printf(" OR");
+					printf(" OR ");
 					break;
 				
 				case LT:
-					printf(" <=");
+					printf(" <= ");
 					break;
 				
 				case EQ:
-					printf(" ==");
+					printf(" == ");
 					break;
 				
 				case AND:
-					printf(" AND");
+					printf(" AND ");
 					break;
 				
 				case NOT:
-					printf(" ~");
+					printf("~");
 					break;
 			}
 			
@@ -781,36 +813,52 @@ void syna_display(syna_node root)
 			break;
 		
 		case NPBA:
-		   syna_execute(root->childs[0]);
+		   syna_display(root->childs[0]);
 		break;
 		
 		case NVALUE:
 			if (root->value_type->type == BOOL)
 				if (root->value == 1)
-					printf(" True");
+					printf("True");
 				else
-					printf(" False");
+					printf("False");
 			else
-				printf(" %d", root->value);
+				printf("%d", root->value);
 		break;
 		
 		case NVAR:
-			printf(" %s", root->string);
+			printf("%s", root->string);
 		break;
 		
 		case NARRAY:
-			  
+			syna_display(root->childs[0]); //array dim+ or var
+			printf("[");
+			syna_display(root->childs[1]); //index
+			printf("]");
+		break;
+		
+		case NNA:
+			printf("NewArray of ");
+			syna_display(root->childs[0]);
+			printf("[");
+			syna_display(root->childs[1]);
+			printf("]");
 		break;
 		
 		case NBRANCH:
 			syna_display(root->childs[0]);
+			if (in_fuction_call)
+				printf(", ");
+			else
+				printf("; ");
+			
 			syna_display(root->childs[1]);
 		break;
 		
 		case NITE:
 			printf(" If (");
 			syna_display(root->childs[0]);
-			printf(" Th {");
+			printf(") Th {");
 			syna_display(root->childs[1]);
 			printf("} El {");
 			syna_display(root->childs[2]);
@@ -832,7 +880,7 @@ void syna_display(syna_node root)
 		
 		case NVAF:
 			syna_display(root->childs[0]);
-			printf(" Af");
+			printf(" Af ");
 			syna_display(root->childs[1]);
 			break;
 		
@@ -842,6 +890,37 @@ void syna_display(syna_node root)
 		
 		case NEXPR:
 			syna_display(root->childs[0]);
+		break;
+		
+		case NTYPE:
+		{
+			pp_type t = root->value_type;
+			while (t != NULL){
+				switch (t->type) {
+					case INT:
+						printf("Integer");
+					break;
+				
+					case BOOL:
+						printf("Boolean");
+					break;
+				
+					case ARRAY:
+						printf("Array of ");
+					break;
+				}
+				
+				t = t->next;
+			}
+		}
+		break;
+		
+		case NFPCALL:
+			printf(" %s(", root->string);
+			in_fuction_call = 1;
+			syna_display(root->childs[0]);
+			printf(")");
+			in_fuction_call = 0;
 		break;
 		
 	}

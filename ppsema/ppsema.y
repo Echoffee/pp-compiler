@@ -2,7 +2,7 @@
 
 %{
 	#include <stdio.h>
-	#include "ppsema.h"
+	#include "ppsyna.h"
 
 	int yylex();
 	int yyerror(char* s);
@@ -48,7 +48,7 @@ E		: E Pl E { $$ = syna_opi_node($1, $3, PL); }
 		| E Lt E { $$ = syna_opb_node($1, $3, LT); }
 		| E Eq E { $$ = syna_opb_node($1, $3, EQ); }
 		| E And E { $$ = syna_opb_node($1, $3, AND); }
-		| Not E { $$ = syna_opb_node($2, NULL, NOT); }
+		| Not E { $$ = syna_opb_node(NULL, $2, NOT); }
 		| P_OP E P_CL { $$ = syna_p_node($2); }
 		| I { $$ = syna_int_node($1); }
 		| V { $$ = syna_var_node($1); }
