@@ -50,8 +50,7 @@ Pex25 | ✔️	  |			|		|		 |		|
 ✖️ : Crash / Important errors
 
 ## Issues
-- "new array" not displaying properly
-- ";" displaying instead of "," when calling functions/procedures
+- [#ba610bd7](https://github.com/Echoffee/pp-compiler/commit/ba610bd799cef48539d7e537eecc1285ef51a5e2)
 
 ## Help and references
 
