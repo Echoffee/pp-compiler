@@ -7,6 +7,8 @@ pp_func f_context = NULL;
 pp_func f_root = NULL;
 pp_func f_current = NULL;
 
+int in_fuction_call = 0;
+
 pp_type syna_create_type(pp_type_id type, pp_type next)
 {
 	pp_type t = (pp_type) malloc(sizeof(struct s_pp_type));
@@ -547,8 +549,10 @@ syna_node syna_call_func_node(char* name, syna_node args)
 
 syna_node syna_newarray_node(syna_node type, syna_node expr)
 {
-	syna_node n = syna_create_node(0);
+	syna_node n = syna_create_node(2);
 	n->type = NNA;
+	n->childs[0] = type;
+	n->childs[1] = expr;
 	return n;
 }
 
@@ -652,6 +656,11 @@ void syna_execute(syna_node root)
 			  
 		break;
 		
+		case NNA:
+			syna_execute(root->childs[0]);
+			syna_execute(root->childs[1]);
+		break;
+		
 		case NBRANCH:
 			syna_execute(root->childs[0]);
 			syna_execute(root->childs[1]);
@@ -666,7 +675,7 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NAAF:
-				  
+			syna_execute(root->childs[1]);
 		break;
 		
 		case NNVAR:
@@ -724,6 +733,7 @@ void syna_execute(syna_node root)
 		syna_execute(root->childs[1]); //Add local variables
 		//When called, must execute root->childs[2]
 		f_context->body = root->childs[2];
+		syna_execute(root->childs[2]);
 		env_change_context("main_program", 0);
 		break;
 		
@@ -733,6 +743,7 @@ void syna_execute(syna_node root)
 		syna_execute(root->childs[1]); //Add local variables
 		//When called, must execute root->childs[2]
 		f_context->body = root->childs[2];
+		syna_execute(root->childs[2]);
 		env_change_context("main_program", 0);
 		break;
 	}
@@ -826,9 +837,21 @@ void syna_display(syna_node root)
 			printf("]");
 		break;
 		
+		case NNA:
+			printf("NewArray of ");
+			syna_display(root->childs[0]);
+			printf("[");
+			syna_display(root->childs[1]);
+			printf("]");
+		break;
+		
 		case NBRANCH:
 			syna_display(root->childs[0]);
-			printf("; ");
+			if (in_fuction_call)
+				printf(", ");
+			else
+				printf("; ");
+			
 			syna_display(root->childs[1]);
 		break;
 		
@@ -869,10 +892,36 @@ void syna_display(syna_node root)
 			syna_display(root->childs[0]);
 		break;
 		
+		case NTYPE:
+		{
+			pp_type t = root->value_type;
+			while (t != NULL){
+				switch (t->type) {
+					case INT:
+						printf("Integer");
+					break;
+				
+					case BOOL:
+						printf("Boolean");
+					break;
+				
+					case ARRAY:
+						printf("Array of ");
+					break;
+				}
+				
+				t = t->next;
+			}
+		}
+		break;
+		
 		case NFPCALL:
 			printf(" %s(", root->string);
+			in_fuction_call = 1;
 			syna_display(root->childs[0]);
 			printf(")");
+			in_fuction_call = 0;
+		break;
 		
 	}
 }
