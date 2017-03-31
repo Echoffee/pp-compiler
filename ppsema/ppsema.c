@@ -631,6 +631,7 @@ void syna_execute(syna_node root)
 			//Check type
 			pp_var v = env_get_variable(root->string, 1);
 			root->value_type = v->type;	
+			
 			}
 		break;
 		
@@ -644,10 +645,11 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NNA:
-			//Check if both arrays are of the same type
+			//Check if index is of type integer
 			syna_execute(root->childs[0]);
 			syna_execute(root->childs[1]);
-			err_check_type(root->childs[1]->value_type, root->childs[0]->value_type);
+			err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL));
+			root->value_type = syna_create_type(ARRAY, root->childs[0]->value_type);
 		break;
 		
 		case NBRANCH:
