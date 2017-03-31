@@ -27,8 +27,8 @@ Ex 	  | ppsyna | ppsema	 | ppina | ppc3ac | c3ai |
 ------|--------|---------|-------|--------|------|
 Pex1  | ✔️ 	  |	✔️		|		|		 |		|
 Pex2  | ✔️ 	  |	✔️		|		|		 |		|
-Pex3  | ✔️ 	  |	✖️		|		|		 |		|
-Pex4  | ✔️ 	  |	✖️		|		|		 |		|
+Pex3  | ✔️ 	  |	🀄		|		|		 |		|
+Pex4  | ✔️ 	  |	🀄		|		|		 |		|
 Pex5  | ✔️ 	  |	✖️		|		|		 |		|
 Pex6  | ✔️ 	  |	✖️		|		|		 |		|
 Pex7  | ✔️ 	  |	✖️		|		|		 |		|
@@ -51,7 +51,7 @@ Pex25 | ✔️	  |	✖️		|		|		 |		|
 
 ## Issues
 - [#ba610bd7](https://github.com/Echoffee/pp-compiler/commit/ba610bd799cef48539d7e537eecc1285ef51a5e2)
-- Crashes when dealing with array members (ie v[x])
+- ~~Crashes when dealing with array members (ie v[x])~~
 - Crashes when dealing with arguments as variables in functions/procedures. 
 
 ## Help and references
