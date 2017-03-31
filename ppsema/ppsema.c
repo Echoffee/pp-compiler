@@ -614,7 +614,7 @@ void syna_execute(syna_node root)
 			
 			syna_execute(root->childs[1]);
 			err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
-			err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));			
+			err_check_type(root->childs[1]->value_type, syna_create_type(BOOL, NULL));			
 		break;
 		
 		case NPBA:
@@ -635,7 +635,12 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NARRAY:
-			//Check type ?
+			syna_execute(root->childs[1]);//index
+			err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL));
+			syna_execute(root->childs[0]);//array-side
+			//root->value_type = syna_create_type(ARRAY, root->childs[0]->value_type);
+			root->value_type = root->childs[0]->value_type->next;
+			//fprintf(stderr, "%d\n", root->childs[0]->value_type->type);
 		break;
 		
 		case NNA:
@@ -667,7 +672,9 @@ void syna_execute(syna_node root)
 		
 		case NAAF:
 			//Check if value and destination are of same type
+			syna_execute(root->childs[0]);
 			syna_execute(root->childs[1]);
+			err_check_type(root->childs[1]->value_type, root->childs[0]->value_type);
 		break;
 		
 		case NNVAR:
