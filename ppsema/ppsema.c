@@ -130,15 +130,25 @@ int env_get_args_number(pp_func f)
 	while(v != NULL)
 	{
 		result++;
+		v = v->next;
 	}
 	
-	return result;
+	return result - 1;
 }
 
 pp_var env_get_variable(char* name, int debug)
 {
 	pp_func c = f_context;
-	pp_var v = c->context;
+	pp_var v = c->args;
+	while (v != NULL && strcmp(v->name, name))
+		v = v->next;
+		
+	if (v != NULL)
+		return v;
+	if (debug)
+		fprintf(stderr, "Variable '%s' not found in args context...\n", name);
+	
+	v = c->context;
 	while (v != NULL && strcmp(v->name, name))
 		v = v->next;
 		
@@ -146,7 +156,7 @@ pp_var env_get_variable(char* name, int debug)
 		return v;
 	
 	if (debug)
-		fprintf(stderr, "Variable not found in local context...\n");
+		fprintf(stderr, "Variable '%s' not found in local context...\n", name);
 	
 	env_change_context("main_program", debug);
 	v = f_context->context;
@@ -160,7 +170,9 @@ pp_var env_get_variable(char* name, int debug)
 		fprintf(stderr, "Going back to local context...\n");
 	
 	f_context = c;
-	v = env_add_variable(name, NONE);
+	if (v == NULL)
+		v = env_add_variable(name, NONE);
+	
 	return v;
 }
 
@@ -546,16 +558,17 @@ void err_check_type(pp_type n, pp_type type)
 	
 }
 
-void err_check_single_argument(syna_node arg, pp_func f, int index)
+void err_check_single_argument(syna_node arg, pp_func f, int index, int max)
 {
 	pp_var v = f->args;
 	int i = 0;
-	while (i < index)
+	while (i < max - index)
 	{
 		i++;
 		v = v->next;
 	}
 	
+	fprintf(stderr, "arg type : %d\n", v->type->type);
 	err_check_type(arg->value_type, v->type);
 }
 
@@ -566,7 +579,7 @@ int err_check_arguments(syna_node arg_node, pp_func f, int rank, int rank_max)
 	if (rank > rank_max)
 	{
 		char* s = (char*) malloc(sizeof(char) * 512);
-		sprintf(s, "Too many arguments : expected %d arguments for %s.", rank_max, f->name);
+		sprintf(s, "Too many arguments : expected %d arguments for %s.", rank_max + 1, f->name);
 		err_display(s);
 		return 0;
 	}
@@ -579,7 +592,8 @@ int err_check_arguments(syna_node arg_node, pp_func f, int rank, int rank_max)
 		break;
 		
 		default:
-			err_check_single_argument(arg_node, f, rank);
+			syna_execute(arg_node);
+			err_check_single_argument(arg_node, f, rank, rank_max);
 		break;
 	}
 	
@@ -754,7 +768,12 @@ void syna_execute(syna_node root)
 			//syna_execute(root->childs[0]);
 			pp_func f = env_get_function(root->string, 1);
 			root->value_type = f->ret_type;
-			err_check_arguments(root->childs[0], f, 0, env_get_args_number(f));
+			if (!err_check_arguments(root->childs[0], f, 0, env_get_args_number(f)));
+				{
+					char* s = (char*) malloc(sizeof(char) * 512);
+					sprintf(s, "Too few arguments for %s", f->name);
+					err_display(s);
+				}
 		}
 		break;
 	}

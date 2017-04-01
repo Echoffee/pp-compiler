@@ -80,7 +80,7 @@ L_args	: %empty { $$ = syna_empty_node(); }
 		| L_argsnn { $$ = $1; }
 		;
 
-L_argsnn: E { $$ = syna_expr_node($1); }
+L_argsnn: E { $$ = $1; }
 		| E S_C L_argsnn { $$ = syna_branch_node($1, $3); }
 		;
 
