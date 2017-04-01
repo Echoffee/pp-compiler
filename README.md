@@ -51,9 +51,11 @@ Pex25 | ✔️	  |	✖️		|		|		 |		|
 
 ## Issues
 - [#ba610bd7](https://github.com/Echoffee/pp-compiler/commit/ba610bd799cef48539d7e537eecc1285ef51a5e2)
+- ⬆️ is kinda important now
 - ~~Crashes when dealing with array members (ie v[x])~~
 - Error logs on arrays are not explicit 
-- Crashes when dealing with arguments as variables in functions/procedures. 
+- ~~Crashes when dealing with arguments as variables in functions/procedures~~
+- Error logs on function calls should be a bit more explicit ?
 
 ## Help and references
 
