@@ -621,12 +621,26 @@ void syna_execute(syna_node root)
 				syna_execute(root->childs[0]);
 			
 			syna_execute(root->childs[1]);
-			err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
-			err_check_type(root->childs[1]->value_type, syna_create_type(BOOL, NULL));			
+			
+			switch (root->opb) {
+				case OR:
+				case AND:
+					err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
+				case NOT:
+					err_check_type(root->childs[1]->value_type, syna_create_type(BOOL, NULL));			
+				break;
+				
+				case LT:
+				case EQ:
+					err_check_type(root->childs[0]->value_type, syna_create_type(INT, NULL));
+					err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL));
+				break;			
+			}
 		break;
 		
 		case NPBA:
 		   syna_execute(root->childs[0]);
+		   root->value_type = root->childs[0]->value_type;
 		break;
 		
 		case NVALUE:

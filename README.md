@@ -29,8 +29,8 @@ Pex1  | ✔️ 	  |	✔️		|		|		 |		|
 Pex2  | ✔️ 	  |	✔️		|		|		 |		|
 Pex3  | ✔️ 	  |	🀄		|		|		 |		|
 Pex4  | ✔️ 	  |	🀄		|		|		 |		|
-Pex5  | ✔️ 	  |	✖️		|		|		 |		|
-Pex6  | ✔️ 	  |	✖️		|		|		 |		|
+Pex5  | ✔️ 	  |	✔️		|		|		 |		|
+Pex6  | ✔️ 	  |	✔️		|		|		 |		|
 Pex7  | ✔️ 	  |	✖️		|		|		 |		|
 Pex8  | ✔️ 	  |	✔️		|		|		 |		|  
 Pex9  | ✔️ 	  |	✖️		|		|		 |		|
@@ -56,6 +56,7 @@ Pex25 | ✔️	  |	✖️		|		|		 |		|
 - Error logs on arrays are not explicit 
 - ~~Crashes when dealing with arguments as variables in functions/procedures~~
 - Error logs on function calls should be a bit more explicit ?
+- Crashes when affecting value to implicit return of a function
 
 ## Help and references
 
