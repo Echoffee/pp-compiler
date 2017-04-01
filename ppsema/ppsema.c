@@ -3,11 +3,14 @@
 #include <string.h>
 #include "ppsema.h"
 
+#define ERR_BUFFER_SIZE 256
+
 pp_func f_context = NULL;
 pp_func f_root = NULL;
 pp_func f_current = NULL;
 
 int in_fuction_call = 0;
+int var_declaration = 0;
 int total_errors = 0;
 
 pp_type syna_create_type(pp_type_id type, pp_type next)
@@ -93,29 +96,27 @@ void env_initialize()
 	env_change_context("main_program", 0);
 }
 
-void env_change_context(char* context_name, int debug)
+void env_change_context(char* context_name, int decl)
 {
 		pp_func f = f_root;
 		while (f != NULL && strcmp(f->name, context_name))
 			f = f->next;
 			
-		if (f == NULL && debug)
+		if (f == NULL && !decl)
 			fprintf(stderr, "ERROR : Context '%s' not found\n", context_name);
 			
 		f_context = f;
-		if (debug)
-			fprintf(stderr, "Context changed to %s\n", f_context->name);
 }
 
-pp_func env_get_function(char* context_name, int debug)
+pp_func env_get_function(char* context_name, int decl)
 {
 		pp_func f = f_root;
-		char* s = (char*) malloc(sizeof(char) * 512);
 		while (f != NULL && strcmp(f->name, context_name))
 			f = f->next;
 			
-		if (f == NULL && debug)
+		if (f == NULL && !decl)
 		{
+			char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
 			sprintf(s, "ERROR : Context '%s' not found\n", context_name);
 			err_display(s);
 		}
@@ -136,7 +137,7 @@ int env_get_args_number(pp_func f)
 	return result - 1;
 }
 
-pp_var env_get_variable(char* name, int debug)
+pp_var env_get_variable(char* name, int decl)
 {
 	pp_func c = f_context;
 	pp_var v = c->args;
@@ -145,8 +146,6 @@ pp_var env_get_variable(char* name, int debug)
 		
 	if (v != NULL)
 		return v;
-	if (debug)
-		fprintf(stderr, "Variable '%s' not found in args context...\n", name);
 	
 	v = c->context;
 	while (v != NULL && strcmp(v->name, name))
@@ -155,20 +154,14 @@ pp_var env_get_variable(char* name, int debug)
 	if (v != NULL)
 		return v;
 	
-	if (debug)
-		fprintf(stderr, "Variable '%s' not found in local context...\n", name);
-	
-	env_change_context("main_program", debug);
+	env_change_context("main_program", decl);
 	v = f_context->context;
 	while (v != NULL && strcmp(v->name, name))
 		v = v->next;
 	
-	if (v == NULL && debug)
+	if (v == NULL && !decl)
 		fprintf(stderr, "ERROR : Variable '%s' not found (current context : '%s')\n", name, c->name);
 		
-	if (debug)
-		fprintf(stderr, "Going back to local context...\n");
-	
 	f_context = c;
 	if (v == NULL)
 		v = env_add_variable(name, NONE);
@@ -514,7 +507,7 @@ void syna_link_args_to_func(pp_func func, syna_node args)
 
 char* err_display_type(pp_type type)
 {
-	char* result = (char*) malloc(sizeof(char) * 512);
+	char* result = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
 	while (type != NULL)
 	{
 		char* s;
@@ -547,7 +540,7 @@ void err_check_type(pp_type n, pp_type type)
 {
 	if (n->type != type->type)
 	{
-		char* s = (char*) malloc(sizeof(char) * 512);
+		char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
 		sprintf(s, "Incorrect type : expected type %s but got %s.", err_display_type(type), err_display_type(n));
 		err_display(s);
 		return;
@@ -568,7 +561,6 @@ void err_check_single_argument(syna_node arg, pp_func f, int index, int max)
 		v = v->next;
 	}
 	
-	fprintf(stderr, "arg type : %d\n", v->type->type);
 	err_check_type(arg->value_type, v->type);
 }
 
@@ -578,10 +570,10 @@ int err_check_arguments(syna_node arg_node, pp_func f, int rank, int rank_max)
 	int b2 = 0;
 	if (rank > rank_max)
 	{
-		char* s = (char*) malloc(sizeof(char) * 512);
+		char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
 		sprintf(s, "Too many arguments : expected %d arguments for %s.", rank_max + 1, f->name);
 		err_display(s);
-		return 0;
+		return 1;
 	}
 	
 	switch (arg_node->type) {
@@ -608,7 +600,9 @@ void syna_execute(syna_node root)
 			break;
 		
 		case NROOT:
+			var_declaration = 1;
 			syna_execute(root->childs[0]);
+			var_declaration = 0;
 			syna_execute(root->childs[1]);
 			syna_execute(root->childs[2]);
 			break;
@@ -643,7 +637,7 @@ void syna_execute(syna_node root)
 		case NVAR:
 			{
 			//Check type
-			pp_var v = env_get_variable(root->string, 1);
+			pp_var v = env_get_variable(root->string, var_declaration);
 			root->value_type = v->type;	
 			
 			}
@@ -714,7 +708,7 @@ void syna_execute(syna_node root)
 		break;
 		
 		case NVDEF:
-			root->childs[0]->variable = env_get_variable(root->childs[0]->string, 0);
+			root->childs[0]->variable = env_get_variable(root->childs[0]->string, var_declaration);
 			if (root->childs[1] != NULL)
 				syna_execute(root->childs[1]);
 				
@@ -744,20 +738,24 @@ void syna_execute(syna_node root)
 		break;
 	
 		case NPBODY:
+		var_declaration = 1;
 		syna_execute(root->childs[0]); //Procedure declaration
 		//Context already changed
 		syna_execute(root->childs[1]); //Add local variables
 		//When called, must execute root->childs[2]
+		var_declaration = 0;
 		f_context->body = root->childs[2];
 		syna_execute(root->childs[2]);
 		env_change_context("main_program", 0);
 		break;
 		
 		case NFBODY:
+		var_declaration = 1;
 		syna_execute(root->childs[0]); //Function declaration
 		//Context already changed
 		syna_execute(root->childs[1]); //Add local variables
 		//When called, must execute root->childs[2]
+		var_declaration = 0;
 		f_context->body = root->childs[2];
 		syna_execute(root->childs[2]);
 		env_change_context("main_program", 0);
@@ -768,12 +766,12 @@ void syna_execute(syna_node root)
 			//syna_execute(root->childs[0]);
 			pp_func f = env_get_function(root->string, 1);
 			root->value_type = f->ret_type;
-			if (!err_check_arguments(root->childs[0], f, 0, env_get_args_number(f)));
-				{
-					char* s = (char*) malloc(sizeof(char) * 512);
-					sprintf(s, "Too few arguments for %s", f->name);
-					err_display(s);
-				}
+			if (!err_check_arguments(root->childs[0], f, 0, env_get_args_number(f)))
+			{
+				char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
+				sprintf(s, "Too few arguments for %s", f->name);
+				err_display(s);
+			}
 		}
 		break;
 	}
