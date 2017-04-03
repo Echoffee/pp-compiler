@@ -126,7 +126,7 @@ $\cfrac{G,H,E/_e \rightarrow G',H',E'/_v}{G,H,E/_{uop} \ e\rightarrow G,H,E/_{[[
 $\cfrac{S/_e \rightarrow S'/_{true}\ S'/_c\ Se \ Wh \ e\ Do \ c \rightarrow S'' }{S/_{Wh \ e\ Do \ c} \rightarrow S''}$
 > $e$ has a boolean result Else : type Error
 >
-> applying expression $e$ to $S$ creates a new environment $S'$.
+> applying expression $e$ to $S$ creates a new environment $S'$ where it will run any command stated under $Do$.
 >
 > applying commands to $S'$ linked to a While condition creates a new environment $S''$
 >
@@ -136,6 +136,35 @@ $\cfrac{S/_e \rightarrow S'/_{true}\ S'/_c\ Se \ Wh \ e\ Do \ c \rightarrow S'' 
 $\cfrac{S/_e \rightarrow S'/_{false}}{S/_{Wh \ e\ Do \ c} \rightarrow S'}$
 > $e$ has a boolean result Else : type error
 >
-> applying expression $e$ to $S$ creates $S'$ where $|e| := False$
+> applying expression $e$ to $S$ creates $S'$ where $|e| := False$, meaning that it skips the $Do$ statement
 >
 >Thus applying $Wh\ e\ Do\ c$ on $S$ will create the same environment $S'$ Else : context error
+
+#### Any Way
+>> While depends on Expr and Commands. Any rule applying to those ones are also commited to it.
+
+### Conditional (If .. Then .. Else ..)
+Conditionals depend on Commands and Expressions. So basically the same rule as said above applies.
+#### true
+$\cfrac{S/_e \rightarrow S'/_{true}\ \ \  S'/_{c_1} \rightarrow S''}{S/If_eTh_{c_1}El_{c_2} \rightarrow S''}$
+>$e$ has a boolean result Else : type error
+>
+> $c_2$ can't apply in that case since $e = true$. If it does, then there is a **context error** and **expression definition issue**, as $e$ should *always* state $true$ and thus avoid the $Else$ part.
+>
+> applying $e$ to $S$ should create a new environment $S'$ with $|e| := True$, meaning that the conditional will run $Then$ and skip $Else$.
+>
+> applying any command to $S'$ creates $S''$
+>
+> thus applying $If_eTh_{c_1}El_{c_2}$ to $S$ should create the same $S''$
+
+#### false
+$\cfrac{S/_e \rightarrow S'/_{false}\ \ \  S'/_{c_2} \rightarrow S''}{S/If_eTh_{c_1}El_{c_2} \rightarrow S''}$
+>$e$ has a boolean result Else : type error
+>
+> $c_1$ can't apply in that case since $e = false$. If it does, then there is a **context error** and **expression definition issue**, as $e$ should *always* state $false$ and thus avoid the $Then$ part.
+>
+> applying $e$ to $S$ should create a new environment $S'$ with $|e| := False$, meaning that the conditional will skip the $Then$ statement and run $Else$.
+>
+> applying any command to $S'$ creates $S''$
+>
+> thus applying $If_eTh_{c_1}El_{c_2}$ to $S$ should create the same $S''$
