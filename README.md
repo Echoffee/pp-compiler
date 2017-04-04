@@ -56,7 +56,7 @@ Pex25 | ✔️	  |	🀄🀄	|		|		 |		|
 - Error logs on arrays are not explicit 
 - ~~Crashes when dealing with arguments as variables in functions/procedures~~
 - Error logs on function calls should be a bit more explicit ?
-- Crashes when affecting value to implicit return of a function
+- ~~Crashes when affecting value to implicit return of a function~~
 
 ## Help and references
 
