@@ -117,7 +117,7 @@ pp_func env_get_function(char* context_name, int decl)
 		if (f == NULL && !decl)
 		{
 			char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
-			sprintf(s, "ERROR : Context '%s' not found\n", context_name);
+			sprintf(s, "Symbol '%s' not found, return type considered as null", context_name);
 			err_display(s);
 		}
 			
@@ -541,7 +541,7 @@ void err_check_type(pp_type n, pp_type type)
 	if (n->type != type->type)
 	{
 		char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
-		sprintf(s, "Incorrect type : expected type %s but got %s.", err_display_type(type), err_display_type(n));
+		sprintf(s, "Incorrect type : expected type%s but got%s.", err_display_type(type), err_display_type(n));
 		err_display(s);
 		return;
 	}
@@ -768,6 +768,7 @@ void syna_execute(syna_node root)
 		syna_execute(root->childs[0]); //Function declaration
 		//Context already changed
 		syna_execute(root->childs[1]); //Add local variables
+		env_add_variable(root->childs[0]->string, root->childs[0]->value_type); // Add return value
 		//When called, must execute root->childs[2]
 		var_declaration = 0;
 		f_context->body = root->childs[2];
@@ -778,13 +779,18 @@ void syna_execute(syna_node root)
 		case NFPCALL:
 		{
 			//syna_execute(root->childs[0]);
-			pp_func f = env_get_function(root->string, 1);
-			root->value_type = f->ret_type;
-			if (!err_check_arguments(root->childs[0], f, 0, env_get_args_number(f)))
+			pp_func f = env_get_function(root->string, 0);
+			if (f != NULL)
 			{
-				char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
-				sprintf(s, "Too few arguments for %s", f->name);
-				err_display(s);
+				root->value_type = f->ret_type;
+				if (!err_check_arguments(root->childs[0], f, 0, env_get_args_number(f)))
+				{
+					char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
+					sprintf(s, "Too few arguments for %s", f->name);
+					err_display(s);
+				}
+			}else{
+				root->value_type = syna_create_type(NONE, NULL);
 			}
 		}
 		break;
@@ -802,5 +808,5 @@ void err_report()
 	if (!total_errors)
 		printf("No error found.\n");
 	else
-		printf("%d error%s found.\n", total_errors, (total_errors>2?"s":""));
+		printf("%d error%s found.\n", total_errors, (total_errors>1?"s":""));
 }
