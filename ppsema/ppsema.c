@@ -536,19 +536,27 @@ char* err_display_type(pp_type type)
 	return result;
 }
 
-void err_check_type(pp_type n, pp_type type)
+int err_check_type_rec(pp_type n, pp_type type)
 {
 	if (n->type != type->type)
+		return 0;
+	
+	if (type->type == ARRAY)
+		return err_check_type_rec(n->next, type->next);
+		
+	return 1;
+	
+}
+
+void err_check_type(pp_type n, pp_type type)
+{
+	int e = err_check_type_rec(n, type);
+	if (!e)
 	{
 		char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
 		sprintf(s, "Incorrect type : expected type%s but got%s.", err_display_type(type), err_display_type(n));
 		err_display(s);
-		return;
 	}
-	
-	if (type->type == ARRAY)
-		err_check_type(n->next, type->next);
-	
 }
 
 void err_check_single_argument(syna_node arg, pp_func f, int index, int max)

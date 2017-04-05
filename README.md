@@ -27,8 +27,8 @@ Ex 	  | ppsyna | ppsema	 | ppina | ppc3ac | c3ai |
 ------|--------|---------|-------|--------|------|
 Pex1  | ✔️ 	  |	✔️		|		|		 |		|
 Pex2  | ✔️ 	  |	✔️		|		|		 |		|
-Pex3  | ✔️ 	  |	🀄		|		|		 |		|
-Pex4  | ✔️ 	  |	🀄		|		|		 |		|
+Pex3  | ✔️ 	  |	✔️(多分)|		|		 |		|
+Pex4  | ✔️ 	  |	✔️		|		|		 |		|
 Pex5  | ✔️ 	  |	✔️		|		|		 |		|
 Pex6  | ✔️ 	  |	✔️		|		|		 |		|
 Pex7  | ✔️ 	  |	✔️		|		|		 |		|
@@ -41,7 +41,7 @@ Pex21 | ✔️	  |	✔️		|		|		 |		|
 Pex22 | ✔️	  |	✔️		|		|		 |		|
 Pex23 | ✔️	  |	✔️(多分)|		|		 |		|
 Pex24 | ✔️	  |	✔️		|		|		 |		|
-Pex25 | ✔️	  |	🀄🀄	|		|		 |		|
+Pex25 | ✔️	  |	🀄		|		|		 |		|
 
 ✔️ : Pass 
 
@@ -52,11 +52,9 @@ Pex25 | ✔️	  |	🀄🀄	|		|		 |		|
 ## Issues
 - [#ba610bd7](https://github.com/Echoffee/pp-compiler/commit/ba610bd799cef48539d7e537eecc1285ef51a5e2)
 - ⬆️ is kinda important now
-- ~~Crashes when dealing with array members (ie v[x])~~
-- Error logs on arrays are not explicit 
 - ~~Crashes when dealing with arguments as variables in functions/procedures~~
 - Error logs on function calls should be a bit more explicit ?
-- ~~Crashes when affecting value to implicit return of a function~~
+- Add error location on messages
 
 ## Help and references
 
