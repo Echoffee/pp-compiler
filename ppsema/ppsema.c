@@ -12,6 +12,12 @@ pp_func f_current = NULL;
 int in_fuction_call = 0;
 int var_declaration = 0;
 int total_errors = 0;
+int line_position = 1;
+
+void incr_line()
+{
+	line_position++;
+}
 
 pp_type syna_create_type(pp_type_id type, pp_type next)
 {
@@ -221,6 +227,7 @@ syna_node syna_create_node(int num_childs)
 	n->opi = INONE;
 	n->opb = BNONE;
 	n->string = NULL;
+	n->line_position = line_position;
 	n->childs = (syna_node*) malloc(sizeof(struct s_syna_node) * num_childs);
 	
 	return n;
@@ -608,6 +615,7 @@ int err_check_arguments(syna_node arg_node, pp_func f, int rank, int rank_max)
 
 void syna_execute(syna_node root)
 {
+	line_position = root->line_position;
 	switch (root->type) {
 		case NEMPTY:
 			//eh
@@ -813,7 +821,7 @@ void syna_execute(syna_node root)
 
 void err_display(char* s)
 {
-	fprintf(stderr, "***ERROR: %s***\n", s);
+	fprintf(stderr, "***ERROR l.%d : %s***\n", line_position, s);
 	total_errors++;
 }
 

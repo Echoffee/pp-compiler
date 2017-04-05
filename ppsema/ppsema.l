@@ -1,5 +1,6 @@
 %{
 	#include "ppsema.tab.h"
+	#include "ppsema.h"
 	#define YY_DECL int yylex()
 %}
 %%
@@ -30,7 +31,8 @@
 "<=" { return Lt; }
 "<" { return Lt; }
 "=" { return Eq; }
-[ \n\r\t] { }
+[ \t] { }
+[\n] { incr_line(); }
 
 "[" { return B_OP; }
 "]" { return B_CL; }

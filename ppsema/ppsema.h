@@ -44,6 +44,7 @@ struct s_syna_node{
 	//any of these may be useless
 	int value;
 	char* string;
+	int line_position;
 	pp_type value_type;
 	pp_var variable;
 	pp_func function;
@@ -51,7 +52,7 @@ struct s_syna_node{
 	syna_opb opb;
 };
 
-
+void incr_line();
 void env_initialize();
 pp_var env_add_variable(char* name, pp_type type);
 void env_add_function(char* name, pp_type ret_type, pp_var args);
