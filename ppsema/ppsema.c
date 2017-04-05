@@ -574,8 +574,12 @@ void err_check_single_argument(syna_node arg, pp_func f, int index, int max)
 
 int err_check_arguments(syna_node arg_node, pp_func f, int rank, int rank_max)
 {
+	if (arg_node->type == NEMPTY)
+		rank--;
+	
 	int b1 = (rank == rank_max?1:0);
 	int b2 = 0;
+	
 	if (rank > rank_max)
 	{
 		char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
@@ -590,7 +594,9 @@ int err_check_arguments(syna_node arg_node, pp_func f, int rank, int rank_max)
 			rank++;
 			b2 = err_check_arguments(arg_node->childs[1], f, rank, rank_max);
 		break;
-		
+		case NEMPTY:
+			return b1;
+		break;
 		default:
 			syna_execute(arg_node);
 			err_check_single_argument(arg_node, f, rank, rank_max);
