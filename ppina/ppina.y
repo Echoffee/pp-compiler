@@ -143,6 +143,6 @@ int main()
 {
 	env_initialize();
 	yyparse();
-	err_report();
+	env_report();
 	return 0;
 }

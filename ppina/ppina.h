@@ -1,4 +1,4 @@
-enum e_pp_type_id { NONE, INT, BOOL, ARRAY };
+enum e_pp_type_id { NONE, INT, BOOL, ARRAY, RET};
 enum e_syna_opi { INONE, PL, MO, MU };
 enum e_syna_opb { BNONE, OR, LT, EQ, AND, NOT};
 enum e_syna_node_id { NEMPTY, NROOT, NOPI, NOPB, NPBA, NVALUE, NVAR, NNVAR, NARRAY, NBRANCH, NITE, NWD, NAAF, NVAF, NSKIP, NEXPR, NVDEF, NTYPE, NPDEF, NFDEF, NPBODY, NFBODY, NFPCALL, NNA};
@@ -16,9 +16,18 @@ struct s_pp_type{
 
 typedef struct s_pp_type* pp_type;
 
+struct s_pp_value{
+	pp_type type;
+	int value;
+	struct s_pp_value* next;
+};
+
+typedef struct s_pp_value* pp_value;
+
 struct s_pp_var{
 	char* name;
 	pp_type type;
+	pp_value value;
 	struct s_pp_var* next;
 };
 
@@ -32,6 +41,7 @@ struct s_pp_func{
 	pp_var args;		//reverse order
 	pp_var args_current;
 	syna_node body;
+	pp_value value;
 	struct s_pp_func* next;
 };
 
@@ -42,12 +52,13 @@ struct s_syna_node{
 	struct s_syna_node** childs;
 	
 	//any of these may be useless
-	int value;
+	int ivalue;
 	char* string;
 	int line_position;
 	pp_type value_type;
 	pp_var variable;
 	pp_func function;
+	pp_value value;
 	syna_opi opi;
 	syna_opb opb;
 };
@@ -90,5 +101,7 @@ syna_node syna_call_func_node(char* name, syna_node args);
 syna_node syna_newarray_node(syna_node type, syna_node expr);
 
 void syna_execute(syna_node root);
+void syna_check(syna_node root);
 void err_display();
 void err_report();
+void env_report();

@@ -28,6 +28,16 @@ pp_type syna_create_type(pp_type_id type, pp_type next)
 	return t;
 }
 
+pp_value env_create_value(pp_type type, int value, pp_value next)
+{
+	pp_value v = (pp_value) malloc(sizeof(struct s_pp_value));
+	v->type = type;
+	v->value = value;
+	v->next = next;
+	
+	return v;
+}
+
 pp_var env_add_variable(char* name, pp_type type)
 {
 	pp_var v = (pp_var) malloc(sizeof(struct s_pp_var));
@@ -220,7 +230,7 @@ syna_node syna_create_node(int num_childs)
 {
 	syna_node n = (syna_node) malloc(sizeof(struct s_syna_node));
 	n->type = NEMPTY;
-	n->value = 0;
+	n->ivalue = 0;
 	n->value_type = NONE;
 	n->variable = NULL;
 	n->function = NULL;
@@ -270,7 +280,7 @@ syna_node syna_int_node(int value)
 {
 	syna_node n = syna_create_node(0);
 	n->type = NVALUE;
-	n->value = value;
+	n->ivalue = value;
 	n->value_type = syna_create_type(INT, NULL);
 	
 	return n;
@@ -291,7 +301,7 @@ syna_node syna_bool_node(int value)
 {
 	syna_node n = syna_create_node(0);
 	n->type = NVALUE;
-	n->value = value;
+	n->ivalue = value;
 	n->value_type = syna_create_type(BOOL, NULL);
 	
 	return n;
@@ -555,7 +565,7 @@ int err_check_type_rec(pp_type n, pp_type type)
 	
 }
 
-void err_check_type(pp_type n, pp_type type)
+int err_check_type(pp_type n, pp_type type)
 {
 	int e = err_check_type_rec(n, type);
 	if (!e)
@@ -564,6 +574,8 @@ void err_check_type(pp_type n, pp_type type)
 		sprintf(s, "Incorrect type : expected type%s but got%s.", err_display_type(type), err_display_type(n));
 		err_display(s);
 	}
+	
+	return e;
 }
 
 void err_check_single_argument(syna_node arg, pp_func f, int index, int max)
@@ -633,8 +645,29 @@ void syna_execute(syna_node root)
 			//Check if both values are of type Integer 
 			syna_execute(root->childs[0]);
 			syna_execute(root->childs[1]);
-			err_check_type(root->childs[0]->value_type, syna_create_type(INT, NULL));
-			err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL));
+			if (	err_check_type(root->childs[0]->value_type, syna_create_type(INT, NULL))
+				&&	err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL)))
+				{
+					int a = root->childs[0]->value->value;
+					int b = root->childs[1]->value->value;
+					int c;
+					switch (root->opi) {
+						case PL:
+							c = a + b;
+							break;
+						
+						case MO:
+							c = a - b;
+							break;
+						
+						case MU:
+							c = a * b;
+							break;
+					}
+					
+					pp_value v = env_create_value(syna_create_type(INT, NULL), c, NULL);
+					root->value = v;
+				}
 		break;
 		
 		case NOPB:
@@ -643,31 +676,65 @@ void syna_execute(syna_node root)
 				syna_execute(root->childs[0]);
 			
 			syna_execute(root->childs[1]);
-			
+			int err_status = 1;
 			switch (root->opb) {
 				case OR:
 				case AND:
-					err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
+					err_status = err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
 				case NOT:
-					err_check_type(root->childs[1]->value_type, syna_create_type(BOOL, NULL));			
+					err_status = err_check_type(root->childs[1]->value_type, syna_create_type(BOOL, NULL));			
 				break;
 				
 				case LT:
 				case EQ:
-					err_check_type(root->childs[0]->value_type, syna_create_type(INT, NULL));
-					err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL));
+					err_status = err_check_type(root->childs[0]->value_type, syna_create_type(INT, NULL))
+								* err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL));
 				break;			
+			}
+			
+			if (err_status)
+			{
+				int a = root->childs[0]->value->value;
+				int b;
+				if (root->opb != NOT)
+					b = root->childs[1]->value->value;
+				int c;
+				switch (root->opb) {		//TODO: Optimization
+					case OR:
+						c = a + b;
+						break;
+						
+					case AND:
+						c = a * b;
+						break;
+						
+					case NOT:
+						c = (a == 0 ? 1 : 0);
+						break;
+					
+					case LT:
+						c = (a <= b ? 1 : 0);
+						break;
+						
+					case EQ:
+						c = (a == b ? 1 : 0);
+						break;
+				}
+				
+				pp_value v = env_create_value(syna_create_type(BOOL, NULL), c, NULL);
+				root->value = v;
 			}
 		break;
 		
 		case NPBA:
 		   syna_execute(root->childs[0]);
 		   root->value_type = root->childs[0]->value_type;
+		   root->value = root->childs[0]->value;
 		break;
 		
 		case NVALUE:
 			//Check type ?
-			
+			//TODO: wat do
 		break;
 		
 		case NVAR:
@@ -675,11 +742,11 @@ void syna_execute(syna_node root)
 			//Check type
 			pp_var v = env_get_variable(root->string, var_declaration);
 			root->value_type = v->type;	
-			
+			root->value = v->value;
 			}
 		break;
 		
-		case NARRAY:
+		case NARRAY:	//TODO: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 			syna_execute(root->childs[1]);//index
 			err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL));
 			syna_execute(root->childs[0]);//array-side
@@ -704,19 +771,30 @@ void syna_execute(syna_node root)
 		case NITE:
 			//Check if condition is of type Boolean
 			syna_execute(root->childs[0]);
-			err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
-			syna_execute(root->childs[1]);
-			syna_execute(root->childs[2]);
+			syna_check(root->childs[1]);
+			syna_check(root->childs[2]);
+			if (err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL)))
+			{
+				if (root->childs[0]->value->value > 0)
+					syna_execute(root->childs[1]);
+				else
+					syna_execute(root->childs[2]);
+			}
 		break;
 		
 		case NWD:
 			//Check if condition is of type Boolean
 			syna_execute(root->childs[0]);
-			err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
-			syna_execute(root->childs[1]);
+			syna_check(root->childs[1]);
+			if (err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL)))
+				while (root->childs[0]->value->value > 0)
+				{
+					syna_execute(root->childs[1]);
+					syna_execute(root->childs[0]);
+				}
 		break;
 		
-		case NAAF:
+		case NAAF:	//TODO: do you like my car ?
 			//Check if value and destination are of same type
 			syna_execute(root->childs[0]);
 			syna_execute(root->childs[1]);
@@ -732,7 +810,9 @@ void syna_execute(syna_node root)
 			//Check if value and destination are of same type
 			syna_execute(root->childs[1]);
 			syna_execute(root->childs[0]);
-			err_check_type(root->childs[1]->value_type, root->childs[0]->value_type);
+			if (err_check_type(root->childs[1]->value_type, root->childs[0]->value_type))
+				root->childs[0]->value = root->childs[1]->value;
+			
 			break;
 		
 		case NSKIP:
@@ -781,7 +861,7 @@ void syna_execute(syna_node root)
 		//When called, must execute root->childs[2]
 		var_declaration = 0;
 		f_context->body = root->childs[2];
-		syna_execute(root->childs[2]);
+		syna_check(root->childs[2]);
 		env_change_context("main_program", 0);
 		break;
 		
@@ -794,13 +874,186 @@ void syna_execute(syna_node root)
 		//When called, must execute root->childs[2]
 		var_declaration = 0;
 		f_context->body = root->childs[2];
-		syna_execute(root->childs[2]);
+		syna_check(root->childs[2]);
 		env_change_context("main_program", 0);
 		break;
 		
 		case NFPCALL:
 		{
 			//syna_execute(root->childs[0]);
+			pp_func f = env_get_function(root->string, 0);
+			if (f != NULL)
+			{
+				root->value_type = f->ret_type;
+				if (!err_check_arguments(root->childs[0], f, 0, env_get_args_number(f)))
+				{
+					char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
+					sprintf(s, "Too few arguments for %s", f->name);
+					err_display(s);
+				}else{
+					env_change_context(f->name, 0);
+					syna_execute(f->body);
+					if (f->ret_type->type != NONE)
+						root->variable = env_get_variable(f->name, 0);
+						
+					env_change_context("main_program", 0);
+				}
+			}else{
+				root->value_type = syna_create_type(NONE, NULL);
+			}
+		}
+		break;
+	}
+}
+
+void syna_check(syna_node root)
+{
+	line_position = root->line_position;
+	switch (root->type) {
+		case NEMPTY:
+			//eh
+			break;
+		
+		case NROOT:
+			var_declaration = 1;
+			syna_check(root->childs[0]);
+			var_declaration = 0;
+			syna_check(root->childs[1]);
+			syna_check(root->childs[2]);
+			break;
+		
+		case NOPI:
+			//Check if both values are of type Integer 
+			syna_check(root->childs[0]);
+			syna_check(root->childs[1]);
+			err_check_type(root->childs[0]->value_type, syna_create_type(INT, NULL));
+			err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL));
+		break;
+		
+		case NOPB:
+			//Check if both values are of type Boolean
+			if (root->opb != NOT)
+				syna_check(root->childs[0]);
+			
+			syna_check(root->childs[1]);
+			int err_status = 1;
+			switch (root->opb) {
+				case OR:
+				case AND:
+					err_status = err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
+				case NOT:
+					err_status = err_check_type(root->childs[1]->value_type, syna_create_type(BOOL, NULL));			
+				break;
+				
+				case LT:
+				case EQ:
+					err_status = err_check_type(root->childs[0]->value_type, syna_create_type(INT, NULL))
+								* err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL));
+				break;			
+			}
+		break;
+		
+		case NPBA:
+		   syna_check(root->childs[0]);
+		   root->value_type = root->childs[0]->value_type;
+		   root->value = root->childs[0]->value;
+		break;
+		
+		case NVALUE:
+			//Check type ?
+		break;
+		
+		case NVAR:
+			{
+			//Check type
+			pp_var v = env_get_variable(root->string, var_declaration);
+			root->value_type = v->type;	
+			}
+		break;
+		
+		case NARRAY:	//TODO: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+			syna_check(root->childs[1]);//index
+			err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL));
+			syna_check(root->childs[0]);//array-side
+			//root->value_type = syna_create_type(ARRAY, root->childs[0]->value_type);
+			root->value_type = root->childs[0]->value_type->next;
+			//fprintf(stderr, "%d\n", root->childs[0]->value_type->type);
+		break;
+		
+		case NNA:
+			//Check if index is of type integer
+			syna_check(root->childs[0]);
+			syna_check(root->childs[1]);
+			err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL));
+			root->value_type = syna_create_type(ARRAY, root->childs[0]->value_type);
+		break;
+		
+		case NBRANCH:
+			syna_check(root->childs[0]);
+			syna_check(root->childs[1]);
+		break;
+		
+		case NITE:
+			//Check if condition is of type Boolean
+			syna_check(root->childs[0]);
+			err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
+			syna_check(root->childs[1]);
+			syna_check(root->childs[2]);
+		break;
+		
+		case NWD:
+			//Check if condition is of type Boolean
+			syna_check(root->childs[0]);
+			syna_check(root->childs[1]);
+			err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
+		break;
+		
+		case NAAF:	//TODO: do you like my car ?
+			//Check if value and destination are of same type
+			syna_check(root->childs[0]);
+			syna_check(root->childs[1]);
+			err_check_type(root->childs[1]->value_type, root->childs[0]->value_type);
+		break;
+		
+		case NNVAR:
+			//Check if value and destination are of same type
+
+		break;
+		
+		case NVAF:
+			//Check if value and destination are of same type
+			syna_check(root->childs[1]);
+			syna_check(root->childs[0]);
+			err_check_type(root->childs[1]->value_type, root->childs[0]->value_type);
+			break;
+		
+		case NSKIP:
+			//eh	
+			break;
+		
+		case NEXPR:
+			
+		break;
+		
+		case NVDEF:
+			root->childs[0]->variable = env_get_variable(root->childs[0]->string, var_declaration);
+			if (root->childs[1] != NULL)
+				syna_check(root->childs[1]);
+				
+			root->childs[0]->variable->type = root->value_type;
+			break;
+		
+		case NTYPE: 
+			if (root->childs[0] != NULL)
+			{
+				syna_check(root->childs[0]);
+				root->value_type->next = root->childs[0]->value_type;
+			}
+		break;
+		
+		case NFPCALL:
+		{
+			//syna_check(root->childs[0]);
 			pp_func f = env_get_function(root->string, 0);
 			if (f != NULL)
 			{
@@ -831,4 +1084,87 @@ void err_report()
 		printf("No error found.\n");
 	else
 		printf("%d error%s found.\n", total_errors, (total_errors>1?"s":""));
+}
+
+void env_display_value(pp_value v, int root)	//1: 1d; 0: 2d+;
+{
+	switch (v->type->type) {
+		case INT:
+			if (root == 1)
+				printf("Value : '%d'\n", v->value);
+			else	//0
+				{
+					if (v->next != NULL)
+						printf("%d, ", v->value);
+					else
+						printf("%d", v->value);	//NOTE: Big issue on how to store data for arrays
+				}
+			break;
+			
+		case BOOL:
+			printf("Value : '%s'\n", (v->value ? "TRUE" : "FALSE"));
+			break;
+			
+		case ARRAY:
+			if (root)
+				printf("Value : ");
+				
+				//NOTE : If value is not ARRAY but has no-null NEXT, then it's last dimension 
+			printf("[");
+			env_display_value
+	}
+}
+
+void env_display()
+{
+	printf("===== ENV =====\n");
+	pp_func f = f_root;
+	while(f != NULL)
+	{
+		pp_var v_root = f->context;
+		while (v_root != NULL)
+		{
+			
+			printf("Var %s of type", v_root->name);
+			pp_type t_current = v_root->type;
+			while (t_current != NULL)
+			{
+				char s[9];
+				switch (t_current->type) {
+					case NONE:
+					sprintf(s, "none");
+					break;
+					
+					case INT:
+					sprintf(s, "integer");
+					break;
+					
+					case BOOL:
+					sprintf(s, "boolean");
+					break;
+					
+					case ARRAY:
+					sprintf(s, "array of");
+					break;
+				}
+				
+				printf(" %s", s);
+				t_current = t_current->next;
+			}
+			
+			printf(" in context '%s'.\n", f->name);
+			env_display_value(v_root);
+			v_root = v_root->next;
+		}
+		
+		f = f->next;
+	}
+	
+	printf("===== END =====\n");
+}
+
+void env_report()
+{
+	env_change_context("main_program", 0);
+	env_display();
 }
