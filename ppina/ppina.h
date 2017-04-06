@@ -19,6 +19,8 @@ typedef struct s_pp_type* pp_type;
 struct s_pp_value{
 	pp_type type;
 	int value;
+	int members_count;
+	struct s_pp_value** members;
 	struct s_pp_value* next;
 };
 

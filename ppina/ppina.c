@@ -34,8 +34,18 @@ pp_value env_create_value(pp_type type, int value, pp_value next)
 	v->type = type;
 	v->value = value;
 	v->next = next;
+	v->members_count = 0;
+	v->members = NULL;
 	
 	return v;
+}
+
+void env_add_members(pp_value value, int size, pp_type type)
+{
+	value->members = (pp_value) malloc(sizeof(pp_value) * size);
+	value->members_count = size;
+	for (int i = 0; i < size; i++)
+		v->members[i] = env_create_value(type, 0, NULL);
 }
 
 pp_var env_add_variable(char* name, pp_type type)
@@ -1086,33 +1096,34 @@ void err_report()
 		printf("%d error%s found.\n", total_errors, (total_errors>1?"s":""));
 }
 
-void env_display_value(pp_value v, int root)	//1: 1d; 0: 2d+;
+void env_display_value(pp_value v, int root)
 {
+	if (root)
+		printf("Value : ");
 	switch (v->type->type) {
 		case INT:
-			if (root == 1)
-				printf("Value : '%d'\n", v->value);
-			else	//0
-				{
-					if (v->next != NULL)
-						printf("%d, ", v->value);
-					else
-						printf("%d", v->value);	//NOTE: Big issue on how to store data for arrays
-				}
-			break;
-			
+			printf("%d", v->value);
+		break;
+		
 		case BOOL:
-			printf("Value : '%s'\n", (v->value ? "TRUE" : "FALSE"));
-			break;
-			
+			printf("%s", (v->value > 0 ? "TRUE" : "FALSE"));
+		break;
+		
 		case ARRAY:
-			if (root)
-				printf("Value : ");
-				
-				//NOTE : If value is not ARRAY but has no-null NEXT, then it's last dimension 
-			printf("[");
-			env_display_value
+		printf("[");
+		for (int i = 0; i < v->members_count; i++)
+		{
+			env_display_value(v->members[i]);
+			if (i < v->members_count - 1)
+				printf(", ");
+		}
+		
+		printf("]");
+		break;
 	}
+	
+	if (root)
+		printf(";\n");
 }
 
 void env_display()
