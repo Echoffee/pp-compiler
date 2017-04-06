@@ -1,6 +1,6 @@
 %{
 #define _XOPEN_SOURCE 700
-#include "c3ai.h"
+#include "bilquad.h"
 #include "environ.h"
 #include <string.h>
 BILQUAD list;
