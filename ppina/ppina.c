@@ -42,6 +42,7 @@ pp_value env_create_value(pp_type type, int value, pp_value next)
 
 pp_value env_create_array(int size, pp_type type)
 {
+	fprintf(stderr, "Create array of %d\n", type->type);
 	pp_value value = env_create_value(syna_create_type(ARRAY, type), 0, NULL);
 	value->members = (pp_value*) malloc(sizeof(pp_value) * size);
 	value->members_count = size;
@@ -57,6 +58,7 @@ pp_var env_add_variable(char* name, pp_type type)
 	v->name = strdup(name);
 	v->type = type;
 	v->next = NULL;
+	v->value = NULL;
 	
 	if (f_context->context_current != NULL)
 		f_context->context_current->next = v;
@@ -247,6 +249,8 @@ syna_node syna_create_node(int num_childs)
 	n->value_type = NONE;
 	n->variable = NULL;
 	n->function = NULL;
+	n->value = NULL;
+	n->ref = NULL;
 	n->opi = INONE;
 	n->opb = BNONE;
 	n->string = NULL;
@@ -707,10 +711,11 @@ void syna_execute(syna_node root)
 			
 			if (err_status)
 			{
-				int a = root->childs[0]->value->value;
-				int b;
+				int b = root->childs[1]->value->value;
+				int a = 0;
 				if (root->opb != NOT)
-					b = root->childs[1]->value->value;
+					a = root->childs[0]->value->value;
+					
 				int c;
 				switch (root->opb) {		//TODO: Optimization
 					case OR:
@@ -722,7 +727,7 @@ void syna_execute(syna_node root)
 						break;
 						
 					case NOT:
-						c = (a == 0 ? 1 : 0);
+						c = (b == 0 ? 1 : 0);
 						break;
 					
 					case LT:
@@ -767,9 +772,15 @@ void syna_execute(syna_node root)
 			//root->value_type = syna_create_type(ARRAY, root->childs[0]->value_type);
 			root->value_type = root->childs[0]->value_type->next;
 			if (root->childs[0]->value->members_count <= root->childs[1]->ivalue)
+			{
 				err_display("Index is out of bounds");
+				fprintf(stderr, "index : %d, size : %d\n", root->childs[1]->ivalue, root->childs[0]->value->members_count);
+			}
 			else
+			{
 				root->value = root->childs[0]->value->members[root->childs[1]->ivalue];
+				root->ref = &(root->childs[0]->value->members[root->childs[1]->ivalue]);
+			}
 			//fprintf(stderr, "%d\n", root->childs[0]->value_type->type);
 		break;
 		
@@ -777,9 +788,11 @@ void syna_execute(syna_node root)
 			//Check if index is of type integer
 			syna_execute(root->childs[0]); //Type
 			syna_execute(root->childs[1]); //Size
-			err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL));
-			root->value_type = syna_create_type(ARRAY, root->childs[0]->value_type);
-			root->value = env_create_array(root->childs[1]->ivalue, root->childs[0]->value_type);
+			if (err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL)))
+			{
+				root->value_type = syna_create_type(ARRAY, root->childs[0]->value_type);
+				root->value = env_create_array(root->childs[1]->ivalue, root->childs[0]->value_type);
+			}
 		break;
 		
 		case NBRANCH:
@@ -818,7 +831,15 @@ void syna_execute(syna_node root)
 			syna_execute(root->childs[0]);
 			syna_execute(root->childs[1]);
 			if (err_check_type(root->childs[1]->value_type, root->childs[0]->value_type))
-				root->childs[0]->value = root->childs[1]->value;
+			{
+				if (root->childs[1]->value_type->type != ARRAY)
+					root->childs[0]->value->value = root->childs[1]->value->value;
+				else
+				{
+					fprintf(stderr, "ARRAY\n");
+					root->childs[0]->ref = &(root->childs[1]->value);
+				}
+			}
 		break;
 		
 		case NNVAR:
@@ -831,7 +852,9 @@ void syna_execute(syna_node root)
 			syna_execute(root->childs[1]);
 			syna_execute(root->childs[0]);
 			if (err_check_type(root->childs[1]->value_type, root->childs[0]->value_type))
+			{
 				root->childs[0]->variable->value = root->childs[1]->value;
+			}
 			
 			break;
 		
@@ -1110,30 +1133,34 @@ void env_display_value(pp_value v, int root)
 {
 	if (root)
 		printf("Value : ");
-		switch (v->type->type) {
-		case INT:
-			printf("%d", v->value);
-		break;
-		
-		case BOOL:
-			printf("%s", (v->value > 0 ? "TRUE" : "FALSE"));
-		break;
-		
-		case ARRAY:
-		printf("[");
-		for (int i = 0; i < v->members_count; i++)
-		{
-			env_display_value(v->members[i], 0);
-			if (i < v->members_count - 1)
-				printf(", ");
-		}
-		
-		printf("]");
-		break;
-	}
+		if (v == NULL)
+			printf("undefined;\n");
+		else{
+			switch (v->type->type) {
+				case INT:
+					printf("%d", v->value);
+					break;
+					
+					case BOOL:
+					printf("%s", (v->value > 0 ? "TRUE" : "FALSE"));
+					break;
+					
+					case ARRAY:
+					printf("size : %d [", v->members_count);
+					for (int i = 0; i < v->members_count; i++)
+					{
+						env_display_value(v->members[i], 0);
+						if (i < v->members_count - 1)
+						printf(", ");
+					}
+					
+					printf("]");
+					break;
+				}
 	
-	if (root)
-		printf(";\n");
+				if (root)
+				printf(";\n");
+	}
 }
 
 void env_display()

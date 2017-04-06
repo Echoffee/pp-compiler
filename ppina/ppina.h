@@ -61,6 +61,7 @@ struct s_syna_node{
 	pp_var variable;
 	pp_func function;
 	pp_value value;
+	pp_value* ref;
 	syna_opi opi;
 	syna_opb opb;
 };
