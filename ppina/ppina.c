@@ -57,7 +57,7 @@ pp_var env_add_variable(char* name, pp_type type)
 	v->name = strdup(name);
 	v->type = type;
 	v->next = NULL;
-	v->value = NULL;
+	v->value = env_create_value(type, 0, NULL);
 	
 	if (f_context->context_current != NULL)
 		f_context->context_current->next = v;
@@ -693,17 +693,18 @@ void syna_execute(syna_node root)
 			
 			syna_execute(root->childs[1]);
 			int err_status = 1;
+			err_status = (root->childs[0]->value != NULL && root->childs[1]->value != NULL ? 1 : 0);
 			switch (root->opb) {
 				case OR:
 				case AND:
-					err_status = err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
+					err_status *= err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
 				case NOT:
-					err_status = err_check_type(root->childs[1]->value_type, syna_create_type(BOOL, NULL));			
+					err_status *= err_check_type(root->childs[1]->value_type, syna_create_type(BOOL, NULL));			
 				break;
 				
 				case LT:
 				case EQ:
-					err_status = err_check_type(root->childs[0]->value_type, syna_create_type(INT, NULL))
+					err_status *= err_check_type(root->childs[0]->value_type, syna_create_type(INT, NULL))
 								* err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL));
 				break;			
 			}
@@ -714,7 +715,7 @@ void syna_execute(syna_node root)
 				int a = 0;
 				if (root->opb != NOT)
 					a = root->childs[0]->value->value;
-					
+				
 				int c;
 				switch (root->opb) {		//TODO: Optimization
 					case OR:
@@ -740,6 +741,9 @@ void syna_execute(syna_node root)
 				
 				pp_value v = env_create_value(syna_create_type(BOOL, NULL), c, NULL);
 				root->value = v;
+			}else{
+				err_display("Cannot evalue expression (are members correctly initialized ?)");
+				root->value == NULL;
 			}
 		break;
 		
@@ -770,10 +774,15 @@ void syna_execute(syna_node root)
 			syna_execute(root->childs[0]);//array-side
 			//root->value_type = syna_create_type(ARRAY, root->childs[0]->value_type);
 			root->value_type = root->childs[0]->value_type->next;
+			if (root->childs[0]->value == NULL)
+				err_display("Value has not been initialized");
+				
 			if (root->childs[0]->value->members_count <= root->childs[1]->ivalue)
 			{
-				err_display("Index is out of bounds");
-				fprintf(stderr, "index : %d, size : %d\n", root->childs[1]->ivalue, root->childs[0]->value->members_count);
+				char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
+				sprintf(s, "Index is out of bounds, array is of size %d but index is %d%s", root->childs[0]->value->members_count
+				, root->childs[1]->ivalue, (root->childs[0]->value->members_count == 0 ? " (is the array correctly initialized ?)": ""));
+				err_display(s);
 			}
 			else
 			{
@@ -817,12 +826,13 @@ void syna_execute(syna_node root)
 			//Check if condition is of type Boolean
 			syna_execute(root->childs[0]);
 			syna_check(root->childs[1]);
-			if (err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL)))
-				while (root->childs[0]->value->value > 0)
+			if (root->childs[0]->value != NULL && root->childs[0]->value->type != NULL && err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL)))
+				while (root->childs[0]->value != NULL && root->childs[0]->value->value > 0)
 				{
 					syna_execute(root->childs[1]);
 					syna_execute(root->childs[0]);
 				}
+			
 		break;
 		
 		case NAAF:	//TODO: do you like my car ?
@@ -1117,6 +1127,7 @@ void syna_check(syna_node root)
 void err_display(char* s)
 {
 	fprintf(stderr, "***ERROR l.%d : %s***\n", line_position, s);
+	exe_stop();
 	total_errors++;
 }
 
@@ -1132,7 +1143,7 @@ void env_display_value(pp_value v, int root)
 {
 	if (root)
 		printf("Value : ");
-		if (v == NULL)
+		if (v == NULL || v->type == NULL)
 			printf("undefined;\n");
 		else{
 			switch (v->type->type) {
@@ -1208,6 +1219,12 @@ void env_display()
 	}
 	
 	printf("===== END =====\n");
+}
+
+void exe_stop()
+{
+	fprintf(stderr, "Execution stopped.\n");
+	exit(-1);
 }
 
 void env_report()
