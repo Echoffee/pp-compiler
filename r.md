@@ -168,3 +168,19 @@ $\cfrac{S/_e \rightarrow S'/_{false}\ \ \  S'/_{c_2} \rightarrow S''}{S/If_eTh_{
 > applying any command to $S'$ creates $S''$
 >
 > thus applying $If_eTh_{c_1}El_{c_2}$ to $S$ should create the same $S''$
+
+
+###Array - Write
+Depends on variable affectation.
+
+> Affects Heap (array of values within current interpretation)
+>
+> Writing to an array is restricted to the type of the current Et of the array. (example : writing w in an Array of Array of Integer $aai$ needs :
+>> in the first part, an Array of Array of Integer.
+>>
+>> in the second part, an Array of Integer. $aai[x] := ai$
+>>
+>> in the last part, an Integer. $aai[x][y] := i$
+>>> Anything else leads to : TypeError.
+>
+>
