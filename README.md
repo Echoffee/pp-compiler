@@ -25,23 +25,23 @@ Deadline : **Monday, April 10th at 11:59pm**
 ## Checklist
 Ex 	  | ppsyna | ppsema	 | ppina | ppc3ac | c3ai |
 ------|--------|---------|-------|--------|------|
-Pex1  | ✔️ 	  |	✔️		|		|		 |		|
-Pex2  | ✔️ 	  |	✔️		|		|		 |		|
-Pex3  | ✔️ 	  |	✔️(多分)|		|		 |		|
-Pex4  | ✔️ 	  |	✔️		|		|		 |		|
-Pex5  | ✔️ 	  |	✔️		|		|		 |		|
-Pex6  | ✔️ 	  |	✔️		|		|		 |		|
-Pex7  | ✔️ 	  |	✔️		|		|		 |		|
-Pex8  | ✔️ 	  |	✔️		|		|		 |		|  
-Pex9  | ✔️ 	  |	✔️		|		|		 |		|
-Pex10 | ✔️	  |	✔️		|		|		 |		|
-Pex11 | ✔️ 	  |	✔️		|		|		 |		|
-Pex12 | ✔️	  |	✔️		|		|		 |		|
-Pex21 | ✔️	  |	✔️		|		|		 |		|
-Pex22 | ✔️	  |	✔️		|		|		 |		|
-Pex23 | ✔️	  |	✔️(多分)|		|		 |		|
-Pex24 | ✔️	  |	✔️		|		|		 |		|
-Pex25 | ✔️	  |	✔️		|		|		 |		|
+Pex1  | ✔️ 	  |	✔️		|✔️		|		 |		|
+Pex2  | ✔️ 	  |	✔️		|✔️		|		 |		|
+Pex3  | ✔️ 	  |	✔️(多分)|✖️	  |		 |		|
+Pex4  | ✔️ 	  |	✔️		|✖️		|		 |		|
+Pex5  | ✔️ 	  |	✔️		|✖️		|		 |		|
+Pex6  | ✔️ 	  |	✔️		|✖️		|		 |		|
+Pex7  | ✔️ 	  |	✔️		|✖️		|		 |		|
+Pex8  | ✔️ 	  |	✔️		|✖️		|		 |		|  
+Pex9  | ✔️ 	  |	✔️		|✖️		|		 |		|
+Pex10 | ✔️	  |	✔️		|✖️		|		 |		|
+Pex11 | ✔️ 	  |	✔️		|✖️		|		 |		|
+Pex12 | ✔️	  |	✔️		|✖️		|		 |		|
+Pex21 | ✔️	  |	✔️		|✖️		|		 |		|
+Pex22 | ✔️	  |	✔️		|✖️		|		 |		|
+Pex23 | ✔️	  |	✔️(多分)|✖️	  |		 |		|
+Pex24 | ✔️	  |	✔️		|✖️		|		 |		|
+Pex25 | ✔️	  |	✔️		|✖️		|		 |		|
 
 ✔️ : Pass 
 
@@ -54,7 +54,7 @@ Pex25 | ✔️	  |	✔️		|		|		 |		|
 - ⬆️ is kinda important now
 - ~~Crashes when dealing with arguments as variables in functions/procedures~~
 - Error logs on function calls should be a bit more explicit ?
-- Add error location on messages
+- Add error location on messages ([#4ce36363](https://github.com/Echoffee/pp-compiler/commit/4ce363631ff69613c96d2842c5fae2b0d84470eb))
 
 ## Help and references
 
