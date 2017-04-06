@@ -28,7 +28,7 @@ Ex 	  | ppsyna | ppsema	 | ppina | ppc3ac | c3ai |
 Pex1  | ✔️ 	  |	✔️		|✔️		|		 |		|
 Pex2  | ✔️ 	  |	✔️		|✔️		|		 |		|
 Pex3  | ✔️ 	  |	✔️(多分)|✔️	  |		 |		|
-Pex4  | ✔️ 	  |	✔️		|✖️		|		 |		|
+Pex4  | ✔️ 	  |	✔️		|✔️		|		 |		|
 Pex5  | ✔️ 	  |	✔️		|✖️		|		 |		|
 Pex6  | ✔️ 	  |	✔️		|✖️		|		 |		|
 Pex7  | ✔️ 	  |	✔️		|✖️		|		 |		|
@@ -52,6 +52,7 @@ Pex25 | ✔️	  |	✔️		|✖️		|		 |		|
 ## Issues
 - [#ba610bd7](https://github.com/Echoffee/pp-compiler/commit/ba610bd799cef48539d7e537eecc1285ef51a5e2)
 - ⬆️ is kinda important now
+- **ppsema : Check if an array is correctly initialized before using it** (e.g. pex5.pp)
 - ~~Crashes when dealing with arguments as variables in functions/procedures~~
 - Error logs on function calls should be a bit more explicit ?
 - Add error location on messages ([#4ce36363](https://github.com/Echoffee/pp-compiler/commit/4ce363631ff69613c96d2842c5fae2b0d84470eb))

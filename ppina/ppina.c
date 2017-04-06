@@ -42,7 +42,6 @@ pp_value env_create_value(pp_type type, int value, pp_value next)
 
 pp_value env_create_array(int size, pp_type type)
 {
-	fprintf(stderr, "Create array of %d\n", type->type);
 	pp_value value = env_create_value(syna_create_type(ARRAY, type), 0, NULL);
 	value->members = (pp_value*) malloc(sizeof(pp_value) * size);
 	value->members_count = size;
@@ -836,8 +835,8 @@ void syna_execute(syna_node root)
 					root->childs[0]->value->value = root->childs[1]->value->value;
 				else
 				{
-					fprintf(stderr, "ARRAY\n");
-					root->childs[0]->ref = &(root->childs[1]->value);
+					root->childs[0]->value->members = root->childs[1]->value->members;
+					root->childs[0]->value->members_count = root->childs[1]->value->members_count;
 				}
 			}
 		break;
