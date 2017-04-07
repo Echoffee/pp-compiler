@@ -18,7 +18,7 @@ char *argcpy(char *src){
 %%
 
 (JMP|ET)[0-9]+                {
-                            BEGIN OPE; free(etiq); etiq=cpa(yytext);
+                            BEGIN OPE; free(etiq); etiq=argcpy(yytext);
                         }
 <OPE>:[A-Za-z]+         {
                             BEGIN ARG_1;
@@ -59,8 +59,8 @@ char *argcpy(char *src){
                             } else if (strncmp("Ret",yytext+1,3)==0){
                                 operation = Ret;
                             }
+                          }
 <ARG_1>:[A-Za-z0-9]*      {
-}
                             BEGIN ARG_2;
                             free(arg1);
                             arg1=argcpy(yytext+1);
@@ -73,7 +73,7 @@ char *argcpy(char *src){
 <DEST>:[A-Za-z0-9]*        {
                             BEGIN INITIAL;
                             char *dst=NULL;
-                            dst = cpa(yytext+1);
+                            dst = argcpy(yytext+1);
                             if(first) {
                                 first = 0;
                                 list = creer_bilquad(creer_quad(etiq,operation,arg1,arg2,dst));
@@ -89,6 +89,7 @@ char *argcpy(char *src){
 int main(int argc, char *argv[]) {
     yylex();
     ENV env = Envalloc();
+    Stack S = malloc(sizeof(struct stack));
     QUAD elem = list.debut;
     while (elem != NULL) {
         /***Afc***/
@@ -138,9 +139,17 @@ int main(int argc, char *argv[]) {
         } else if (elem->OP == Sk){
             elem = elem->SUIV;
         } else if (elem->OP == Call){
-          ;//Stack
+          QUAD listStart = list.debut;
+          char *dest = elem->RES;
+          Push(&S,elem->SUIV);
+          while (strcmp(listStart->ETIQ,dest) != 0){
+              listStart = listStart->SUIV;
+            }
+          elem = listStart;//Stack WIP
         } else if (elem->OP == Ret){
-          ;//Stack
+          elem->SUIV = (QUAD)Top(&S);//Stack
+          Pop(&S);
+          elem = elem->SUIV;
         } else if (elem->OP == And){
           initenv(&env, elem->RES);
           initenv(&env, elem->ARG1);
@@ -158,9 +167,22 @@ int main(int argc, char *argv[]) {
         } else if (elem->OP == Not){
           initenv(&env,elem->RES);
           initenv(&env,elem->ARG1);
-          int res = eval(elem->OP,valch(env,elem->ARG1),NULL);
+          int res = eval(elem->OP,valch(env,elem->ARG1),valch(env,elem->ARG1));
           affect(env,elem->RES,res);
           elem = elem->SUIV;
+        } else if (elem->OP == AfInd){
+          ;//needs to handle arrays
+        } else if (elem->OP == Ind){
+          ;//needs to handle arrays
+        } else if (elem->OP == Lt){
+          initenv(&env, elem->RES);
+          initenv(&env, elem->ARG1);
+          initenv(&env, elem->ARG2);
+          int res = eval(elem->OP, valch(env, elem->ARG1), valch(env, elem->ARG2));
+          affect(env, elem->RES, res);
+          elem = elem->SUIV;
+        } else if (elem->OP == Param){
+          ;//Stack
         }
     }
 

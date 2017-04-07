@@ -19,12 +19,12 @@
 #define Param 272
 #define Call 273
 #define Ret 274
-
+#define STACK_MAX 200
 
 typedef struct stack{
-	int* data;
+	void* data[STACK_MAX];
 	int size;
-}stack;
+}Stack;
 
 /* ----------------------------types--------------------------------------------*/
 /* biliste de quadruplets etiquetes (stocke C3A ou Y86 )*/
@@ -47,6 +47,9 @@ extern BILQUAD concatq(BILQUAD bq1, BILQUAD bq2);/* retourne la concatenation   
 extern char *nomop(int codop); /* traduit entier vers chaine (= nom operation)    */
 extern void ecrire_quad(QUAD qd); /* affiche le quadruplet                       */
 extern void ecrire_bilquad(BILQUAD bq); /* affiche la biliste de quadruplets     */
-
+extern void *Top(Stack*);
+extern void Init(Stack*);
+extern void Pop(Stack*);
+extern void Push(Stack*,void*);
 
 #endif

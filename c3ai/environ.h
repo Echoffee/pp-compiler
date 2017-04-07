@@ -6,7 +6,6 @@
 typedef struct cellenv{
   char *ID;
   int  VAL;
-  char* typ;
   struct cellenv *SUIV;} *ENV;
 
 /*------------------FONCTIONS ---------------------------------------------------*/

@@ -6,6 +6,7 @@
 #include <string.h>
 #include "bilquad.h"
 #include "environ.h"
+
 /*-------------------------------------------------------------------*/
 /* ----------------------------types---------------------------------*/
 /* QUAD,BILQUAD: definis dans bilquad.h                              */
@@ -34,14 +35,14 @@ QUAD creer_quad(char *etiq,int op,char *arg1,char *arg2,char *res)
 }
 
 /* retourne une biliste vide  */
-BILQUAD bilquad_vide() 
+BILQUAD bilquad_vide()
 {BILQUAD bq;
   bq.debut=NULL;bq.fin=NULL;
   return(bq);
 }
 
 /* retourne une biliste a un element  */
-BILQUAD creer_bilquad(QUAD qd) 
+BILQUAD creer_bilquad(QUAD qd)
 {BILQUAD bq;
   bq.debut=qd;bq.fin=qd;
   return(bq);
@@ -77,7 +78,7 @@ BILQUAD concatq(BILQUAD bq1, BILQUAD bq2)
         bq.fin=bq2.fin;
         return(bq);}
     else
-      return(bq1);  
+      return(bq1);
   else
     return(bq2);
 }
@@ -94,7 +95,16 @@ char *nomop(int codop)
     case(Afc): return("Afc");
     case(St): return("St");
     case(Jp): return("Jp");
-    case(Jz): return("Jz");  
+    case(Jz): return("Jz");
+    case(Not): return ("Not");
+    case(And): return("And");
+    case(Or): return ("Or");
+    case(Lt): return ("Lt");
+    case(AfInd): return ("AfInd");
+    case(Ind): return ("Ind");
+    case(Param): return ("Param");
+    case(Call): return("Call");
+    case(Ret): return("Ret");
     default:return(NULL);
     };
 }
@@ -128,5 +138,34 @@ void ecrire_bilquad(BILQUAD bq)
     {ecrire_quad(qcour);
       qcour=qcour->SUIV;}
 }
+/* stack */
 
+void Init(Stack *S)
+{
+    S->size = 0;
+}
 
+void *Top(Stack *S)
+{
+    if (S->size == 0) {
+        return NULL;
+    }
+
+    return S->data[S->size-1];
+}
+
+void Push(Stack *S, void* d)
+{
+    if (S->size < STACK_MAX)
+        S->data[S->size++] = d;
+    else
+        return;
+}
+
+void Pop(Stack *S)
+{
+    if (S->size == 0)
+        return;
+    else
+        S->size--;
+}

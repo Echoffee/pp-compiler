@@ -5,8 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "environ.h"
-#include "AST.h"
-#include "../imp.tab.h"
+#include "bilquad.h"
 /*---------------------allocation memoire----------------------------*/
 char *Idalloc()
 {
@@ -55,6 +54,8 @@ int eval(int op, int arg1, int arg2)
       return arg1 && arg2;
     case Or:
       return arg1 || arg2;
+    case Lt:
+      return (arg1 < arg2);
     default:
       return(0);
     }
