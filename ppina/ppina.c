@@ -57,7 +57,7 @@ pp_var env_add_variable(char* name, pp_type type)
 	v->name = strdup(name);
 	v->type = type;
 	v->next = NULL;
-	v->value = NULL;
+	v->value = env_create_value(type, 0, NULL);
 	
 	if (f_context->context_current != NULL)
 		f_context->context_current->next = v;
@@ -607,7 +607,7 @@ void err_check_single_argument(syna_node arg, pp_func f, int index, int max)
 	err_check_type(arg->value_type, v->type);
 }
 
-int err_check_arguments(syna_node arg_node, pp_func f, int rank, int rank_max)
+int err_check_arguments(syna_node arg_node, pp_func f, int rank, int rank_max, int check)
 {
 	if (arg_node->type == NEMPTY)
 		rank--;
@@ -625,15 +625,19 @@ int err_check_arguments(syna_node arg_node, pp_func f, int rank, int rank_max)
 	
 	switch (arg_node->type) {
 		case NBRANCH:
-			b1 = err_check_arguments(arg_node->childs[0], f, rank, rank_max);
+			b1 = err_check_arguments(arg_node->childs[0], f, rank, rank_max, check);
 			rank++;
-			b2 = err_check_arguments(arg_node->childs[1], f, rank, rank_max);
+			b2 = err_check_arguments(arg_node->childs[1], f, rank, rank_max, check);
 		break;
 		case NEMPTY:
 			return b1;
 		break;
 		default:
-			syna_execute(arg_node);
+			if (check)
+				syna_check(arg_node);
+			else
+				syna_execute(arg_node);
+			
 			err_check_single_argument(arg_node, f, rank, rank_max);
 		break;
 	}
@@ -693,17 +697,18 @@ void syna_execute(syna_node root)
 			
 			syna_execute(root->childs[1]);
 			int err_status = 1;
+			err_status = (root->childs[0]->value != NULL && root->childs[1]->value != NULL ? 1 : 0);
 			switch (root->opb) {
 				case OR:
 				case AND:
-					err_status = err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
+					err_status *= err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL));
 				case NOT:
-					err_status = err_check_type(root->childs[1]->value_type, syna_create_type(BOOL, NULL));			
+					err_status *= err_check_type(root->childs[1]->value_type, syna_create_type(BOOL, NULL));			
 				break;
 				
 				case LT:
 				case EQ:
-					err_status = err_check_type(root->childs[0]->value_type, syna_create_type(INT, NULL))
+					err_status *= err_check_type(root->childs[0]->value_type, syna_create_type(INT, NULL))
 								* err_check_type(root->childs[1]->value_type, syna_create_type(INT, NULL));
 				break;			
 			}
@@ -714,7 +719,7 @@ void syna_execute(syna_node root)
 				int a = 0;
 				if (root->opb != NOT)
 					a = root->childs[0]->value->value;
-					
+				
 				int c;
 				switch (root->opb) {		//TODO: Optimization
 					case OR:
@@ -740,6 +745,9 @@ void syna_execute(syna_node root)
 				
 				pp_value v = env_create_value(syna_create_type(BOOL, NULL), c, NULL);
 				root->value = v;
+			}else{
+				err_display("Cannot evalue expression (are members correctly initialized ?)");
+				root->value == NULL;
 			}
 		break;
 		
@@ -770,10 +778,15 @@ void syna_execute(syna_node root)
 			syna_execute(root->childs[0]);//array-side
 			//root->value_type = syna_create_type(ARRAY, root->childs[0]->value_type);
 			root->value_type = root->childs[0]->value_type->next;
+			if (root->childs[0]->value == NULL)
+				err_display("Value has not been initialized");
+				
 			if (root->childs[0]->value->members_count <= root->childs[1]->ivalue)
 			{
-				err_display("Index is out of bounds");
-				fprintf(stderr, "index : %d, size : %d\n", root->childs[1]->ivalue, root->childs[0]->value->members_count);
+				char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
+				sprintf(s, "Index is out of bounds, array is of size %d but index is %d%s", root->childs[0]->value->members_count
+				, root->childs[1]->ivalue, (root->childs[0]->value->members_count == 0 ? " (is the array correctly initialized ?)": ""));
+				err_display(s);
 			}
 			else
 			{
@@ -817,12 +830,13 @@ void syna_execute(syna_node root)
 			//Check if condition is of type Boolean
 			syna_execute(root->childs[0]);
 			syna_check(root->childs[1]);
-			if (err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL)))
-				while (root->childs[0]->value->value > 0)
+			if (root->childs[0]->value != NULL && root->childs[0]->value->type != NULL && err_check_type(root->childs[0]->value_type, syna_create_type(BOOL, NULL)))
+				while (root->childs[0]->value != NULL && root->childs[0]->value->value > 0)
 				{
 					syna_execute(root->childs[1]);
 					syna_execute(root->childs[0]);
 				}
+			
 		break;
 		
 		case NAAF:	//TODO: do you like my car ?
@@ -909,35 +923,45 @@ void syna_execute(syna_node root)
 		
 		case NFBODY:
 		var_declaration = 1;
+		fprintf(stderr, "0\n");
 		syna_execute(root->childs[0]); //Function declaration
+		fprintf(stderr, "1\n");
 		//Context already changed
 		syna_execute(root->childs[1]); //Add local variables
+		fprintf(stderr, "2\n");
 		env_add_variable(root->childs[0]->string, root->childs[0]->value_type); // Add return value
+		fprintf(stderr, "3\n");
 		//When called, must execute root->childs[2]
 		var_declaration = 0;
 		f_context->body = root->childs[2];
+		fprintf(stderr, "4\n");
 		syna_check(root->childs[2]);
+		fprintf(stderr, "5\n");
 		env_change_context("main_program", 0);
 		break;
 		
 		case NFPCALL:
-		{
+		{	//NOTE: Somehow the syna_check is crashing, don't know why, but this might be the last step for ppina
 			//syna_execute(root->childs[0]);
+			fprintf(stderr, "hai\n");
 			pp_func f = env_get_function(root->string, 0);
 			if (f != NULL)
 			{
 				root->value_type = f->ret_type;
-				if (!err_check_arguments(root->childs[0], f, 0, env_get_args_number(f)))
+				if (!err_check_arguments(root->childs[0], f, 0, env_get_args_number(f), 0))
 				{
 					char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
 					sprintf(s, "Too few arguments for %s", f->name);
 					err_display(s);
 				}else{
 					env_change_context(f->name, 0);
-					syna_execute(f->body);
 					if (f->ret_type->type != NONE)
+					{
 						root->variable = env_get_variable(f->name, 0);
+						root->value = root->variable->value;
+					}
 						
+					ina_execute(f, root->childs[0]);
 					env_change_context("main_program", 0);
 				}
 			}else{
@@ -947,7 +971,6 @@ void syna_execute(syna_node root)
 		break;
 	}
 }
-
 void syna_check(syna_node root)
 {
 	line_position = root->line_position;
@@ -1095,12 +1118,12 @@ void syna_check(syna_node root)
 		
 		case NFPCALL:
 		{
-			//syna_check(root->childs[0]);
+			syna_check(root->childs[0]);
 			pp_func f = env_get_function(root->string, 0);
 			if (f != NULL)
 			{
 				root->value_type = f->ret_type;
-				if (!err_check_arguments(root->childs[0], f, 0, env_get_args_number(f)))
+				if (!err_check_arguments(root->childs[0], f, 0, env_get_args_number(f), 1))
 				{
 					char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
 					sprintf(s, "Too few arguments for %s", f->name);
@@ -1114,9 +1137,23 @@ void syna_check(syna_node root)
 	}
 }
 
+void ina_execute(pp_func f, syna_node args)
+{
+	pp_var v = f->args;
+	while (v != NULL)
+	{
+		//NOTE: 0141am Need to link the args to local variables before executing f.
+		// The hard part is to determine which leaf of the syna_node is for which argument
+		// Maybe modyfing err_check_arguments is needed, absolutely not sure about that.
+		// This is the hardest part, after that, everything will be 大丈夫.
+	}
+	syna_execute(f->body);
+}
+
 void err_display(char* s)
 {
 	fprintf(stderr, "***ERROR l.%d : %s***\n", line_position, s);
+	exe_stop();
 	total_errors++;
 }
 
@@ -1132,7 +1169,7 @@ void env_display_value(pp_value v, int root)
 {
 	if (root)
 		printf("Value : ");
-		if (v == NULL)
+		if (v == NULL || v->type == NULL)
 			printf("undefined;\n");
 		else{
 			switch (v->type->type) {
@@ -1208,6 +1245,12 @@ void env_display()
 	}
 	
 	printf("===== END =====\n");
+}
+
+void exe_stop()
+{
+	fprintf(stderr, "Execution stopped.\n");
+	exit(-1);
 }
 
 void env_report()

@@ -108,3 +108,5 @@ void syna_check(syna_node root);
 void err_display();
 void err_report();
 void env_report();
+
+void exe_stop();
