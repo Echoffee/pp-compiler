@@ -1,12 +1,14 @@
 enum e_pp_type_id { NONE, INT, BOOL, ARRAY, RET};
 enum e_syna_opi { INONE, PL, MO, MU };
 enum e_syna_opb { BNONE, OR, LT, EQ, AND, NOT};
+//                       0     1     2     3     4     5       6     7        8        9      10    11   12   13   14        15    16     17     18      19     20     21       22      23
 enum e_syna_node_id { NEMPTY, NROOT, NOPI, NOPB, NPBA, NVALUE, NVAR, NNVAR, NARRAY, NBRANCH, NITE, NWD, NAAF, NVAF, NSKIP, NEXPR, NVDEF, NTYPE, NPDEF, NFDEF, NPBODY, NFBODY, NFPCALL, NNA};
-
+enum e_pp_var_scope { GLOBAL, LOCAL};
 typedef enum e_pp_type_id pp_type_id;
 typedef enum e_syna_opi syna_opi;
 typedef enum e_syna_opb syna_opb;
 typedef enum e_syna_node_id syna_node_id;
+typedef enum e_pp_var_scope pp_var_scope;
 typedef struct s_syna_node* syna_node;
 
 struct s_pp_type{
@@ -30,6 +32,7 @@ struct s_pp_var{
 	char* name;
 	pp_type type;
 	pp_value value;
+	pp_var_scope scope;
 	struct s_pp_var* next;
 };
 
@@ -54,22 +57,28 @@ struct s_syna_node{
 	struct s_syna_node** childs;
 	
 	//any of these may be useless
-	int ivalue;
 	char* string;
 	int line_position;
-	pp_type value_type;
 	pp_var variable;
 	pp_func function;
 	pp_value value;
-	pp_value* ref;
 	syna_opi opi;
 	syna_opb opb;
 };
 
+struct s_pp_context{
+	pp_var context;
+	pp_var current_context;
+	pp_value return_value;
+	char* context_name;
+};
+
+typedef struct s_pp_context* pp_context;
+
 void incr_line();
 void env_initialize();
 pp_var env_add_variable(char* name, pp_type type);
-void env_add_function(char* name, pp_type ret_type, pp_var args);
+pp_func env_add_function(char* name, pp_type ret_type, pp_var args);
 pp_var env_add_lcl_variable(pp_var lcl_parent, char* name, pp_type type);
 pp_type env_get_type_of_variable(char* name, int debug);
 pp_type env_get_type_of_function(char* name, int debug);
@@ -103,10 +112,14 @@ syna_node syna_fbody_node(syna_node def, syna_node def_vars, syna_node body);
 syna_node syna_call_func_node(char* name, syna_node args);
 syna_node syna_newarray_node(syna_node type, syna_node expr);
 
-void syna_execute(syna_node root);
-void syna_check(syna_node root);
+void syna_execute(syna_node root, pp_context context);
+void ina_execute(pp_func f, syna_node args);
+void syna_check(syna_node root, pp_context context);
 void err_display();
 void err_report();
 void env_report();
+void env_display(pp_context context);
 
 void exe_stop();
+pp_var exe_get_variable(char* name, pp_context context);
+pp_context exe_create_context();

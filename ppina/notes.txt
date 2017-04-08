@@ -1,0 +1,22 @@
+IDEA:
+
+Unifier toutes les variables dans un contexte, une sorte de liste avec toutes les variables dedans.
+Seul ce contexte sera modifiable, et le contexte sera copié avant chaque appel de fonction, 
+
+Pour la récupération des valeurs de retour, faire une fonction du type :
+
+pp_value call_function(pp_func f, current_context)
+{
+	new_context = copy_context(context_current);
+	env_add_variable(new_context, f->name, f->ret_value);
+	syna_execute(f->body, new_context);
+	return env_get_variable(f->name, new_context);
+}
+
+Donc, TODO :
+> Unifier les contextes en un seul (plus de "main_program")
+> création d'un nouveau contexte : (main + locals (f->context) + arguments (f->args attribués))
+> changer les fonctions plus haut pour faire marcher que sur un contexte passé en param
+
+H A V E
+   F U N
