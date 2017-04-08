@@ -17,6 +17,9 @@ char *argcpy(char *src){
 %s OPE ARG_1 ARG_2 DEST
 %%
 
+[A-Za-z]+ { //fun
+  BEGIN OPE; free(etiq); etiq=argcpy(yytext);
+}
 (JMP|ET)[0-9]+                {
                             BEGIN OPE; free(etiq); etiq=argcpy(yytext);
                         }
@@ -89,8 +92,14 @@ char *argcpy(char *src){
 int main(int argc, char *argv[]) {
     yylex();
     ENV env = Envalloc();
-    Stack S = malloc(sizeof(struct stack));
-    QUAD elem = list.debut;
+    ENV param = Envalloc();
+    ENV loc;
+    char* current = NULL;
+
+    QUAD elem;
+    elem = list.debut;
+    Stack S;
+    Init(&S);
     while (elem != NULL) {
         /***Afc***/
         if (elem->OP == Afc) {
@@ -141,6 +150,9 @@ int main(int argc, char *argv[]) {
         } else if (elem->OP == Call){
           QUAD listStart = list.debut;
           char *dest = elem->RES;
+          current = dest;
+          loc = Envalloc();
+          initenv(&loc,elem->ARG1);
           Push(&S,elem->SUIV);
           while (strcmp(listStart->ETIQ,dest) != 0){
               listStart = listStart->SUIV;
@@ -149,6 +161,11 @@ int main(int argc, char *argv[]) {
         } else if (elem->OP == Ret){
           elem->SUIV = (QUAD)Top(&S);//Stack
           Pop(&S);
+          printf("***environnement local %s --- valeurs\n", current);
+          ecrire_env(loc);
+          free(loc);
+          free(param);
+          param = Envalloc();
           elem = elem->SUIV;
         } else if (elem->OP == And){
           initenv(&env, elem->RES);
@@ -182,7 +199,9 @@ int main(int argc, char *argv[]) {
           affect(env, elem->RES, res);
           elem = elem->SUIV;
         } else if (elem->OP == Param){
-          ;//Stack
+          initenv(&param,elem->ARG1);
+          initenv(&param,elem->ARG2);
+          affect(env,elem->ARG1,valch(env,elem->ARG2));//Ajoute à l'environnement Paramétrique le couple Arg1:=Arg2
         }
     }
 
