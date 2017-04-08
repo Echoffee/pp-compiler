@@ -80,7 +80,6 @@ char *argcpy(char *src){
                                 first = 0;
                                 list = creer_bilquad(creer_quad(etiq,operation,arg1,arg2,dst));
                             } else {
-                                if (operation == Param) {printf("çalu");}
                                 BILQUAD tmp = creer_bilquad(creer_quad(etiq,operation,arg1,arg2,dst));
                                 list = concatq(list,tmp);
 
@@ -94,6 +93,7 @@ int main(int argc, char *argv[]) {
     ENV env = Envalloc();
     ENV param = Envalloc();
     ENV loc = env;
+    ENV tmploc;
     char* current = NULL;
     int scope = 0;
     QUAD elem;
@@ -170,6 +170,7 @@ int main(int argc, char *argv[]) {
         } else if (elem->OP == Sk){
             elem = elem->SUIV;
         } else if (elem->OP == Call){
+          tmploc = loc;
           scope++;
           // ca1
           QUAD listStart = list.debut;
@@ -196,9 +197,11 @@ int main(int argc, char *argv[]) {
           Pop(&S);
           param = (ENV)Top(&S); //Récupération de l'environnement paramétrique pré-call
           Pop(&S);
-          printf("***environnement local %s --- valeurs\n", current);
+          printf("***environnement local fonction/procédure %.16s --- valeurs\n", &current[2]);
           ecrire_env(loc);
-          loc = env;
+          if (scope == 0)
+            loc = env;
+          else loc = tmploc;
           param = Envalloc();
           elem = elem->SUIV;
         } else if (elem->OP == Not){
@@ -217,10 +220,10 @@ int main(int argc, char *argv[]) {
         } else if (elem->OP == Ind){
           ;//needs to handle arrays
         } else if (elem->OP == Param){
-          fprintf(stderr,"A"); // for debug purposes
           initenv(&param,elem->ARG1);
           initenv(&param,elem->ARG2);
           affect(param,elem->ARG1,valch((scope > 0)?loc:env,elem->ARG2));//Ajoute à l'environnement Paramétrique le couple Arg1:=Arg2
+          elem = elem->SUIV;
         }
     }
 

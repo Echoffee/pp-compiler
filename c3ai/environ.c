@@ -93,7 +93,7 @@ int ecrire_env(ENV rho)
       return(EXIT_SUCCESS);}
   else
     {
-        if(rho->ID != NULL && strncmp(rho->ID,"CT",2) !=0){
+        if(rho->ID != NULL && strncmp(rho->ID,"CT",2) !=0 && strncmp(rho->ID,"ET",2) != 0){
            printf("variable %s valeur %d \n",rho->ID ? rho->ID : "(null)",rho->VAL);
         }
         ecrire_env(rho->SUIV);
@@ -116,6 +116,6 @@ void removeLastFromEnv(ENV rho)
     if (rho->SUIV == NULL){
       rho = NULL;
     } else {
-      removeLastFromEnv(rho);
+      removeLastFromEnv(rho->SUIV);
     }
 }
