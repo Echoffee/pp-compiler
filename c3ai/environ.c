@@ -5,8 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "environ.h"
-#include "AST.h"
-#include "../imp.tab.h"
+#include "bilquad.h"
 /*---------------------allocation memoire----------------------------*/
 char *Idalloc()
 {
@@ -55,6 +54,8 @@ int eval(int op, int arg1, int arg2)
       return arg1 && arg2;
     case Or:
       return arg1 || arg2;
+    case Lt:
+      return (arg1 < arg2);
     default:
       return(0);
     }
@@ -91,9 +92,12 @@ int ecrire_env(ENV rho)
     {printf("fin d' environnement \n");
       return(EXIT_SUCCESS);}
   else
-    {printf("variable %s valeur %d \n",rho->ID ? rho->ID : "(null)",rho->VAL);
-      ecrire_env(rho->SUIV);
-      return(EXIT_SUCCESS);
+    {
+        if(rho->ID != NULL && strncmp(rho->ID,"CT",2) !=0 && strncmp(rho->ID,"ET",2) != 0){
+           printf("variable %s valeur %d \n",rho->ID ? rho->ID : "(null)",rho->VAL);
+        }
+        ecrire_env(rho->SUIV);
+        return(EXIT_SUCCESS);
     };
 }
 
@@ -105,4 +109,13 @@ int valch(ENV rho, char *var)
     return(pos->VAL);
   else
     return(0);
+}
+
+void removeLastFromEnv(ENV rho)
+{
+    if (rho->SUIV == NULL){
+      rho = NULL;
+    } else {
+      removeLastFromEnv(rho->SUIV);
+    }
 }
