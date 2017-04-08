@@ -18,7 +18,8 @@ char *argcpy(char *src){
 %%
 
 
-((JMP|ET)[0-9]+)|[A-Za-z]+                {
+
+((JMP|ET)[0-9]+)|ET[A-Z]{1,16}          {
                             BEGIN OPE; free(etiq); etiq=argcpy(yytext);
                         }
 <OPE>:[A-Za-z]+         {
@@ -79,6 +80,7 @@ char *argcpy(char *src){
                                 first = 0;
                                 list = creer_bilquad(creer_quad(etiq,operation,arg1,arg2,dst));
                             } else {
+                                if (operation == Param) {printf("çalu");}
                                 BILQUAD tmp = creer_bilquad(creer_quad(etiq,operation,arg1,arg2,dst));
                                 list = concatq(list,tmp);
 
@@ -91,9 +93,9 @@ int main(int argc, char *argv[]) {
     yylex();
     ENV env = Envalloc();
     ENV param = Envalloc();
-    ENV loc;
+    ENV loc = env;
     char* current = NULL;
-
+    int scope = 0;
     QUAD elem;
     elem = list.debut;
     Stack S;
@@ -106,19 +108,30 @@ int main(int argc, char *argv[]) {
             elem = elem->SUIV;
         }
         /***Pl Mu Mo***/
-        else if (elem->OP == Pl || elem->OP == Mu || elem->OP == Mo) {
-            initenv(&env, elem->RES);
-            initenv(&env, elem->ARG1);
-            initenv(&env, elem->ARG2);
-            int res = eval(elem->OP, valch(env, elem->ARG1), valch(env, elem->ARG2));
-            affect(env, elem->RES, res);
-            elem = elem->SUIV;
+        else if (elem->OP == Pl || elem->OP == Mu || elem->OP == Mo || elem->OP == Or || elem->OP == And || elem->OP == Lt) {
+              if (scope == 0) {
+                initenv(&env,elem->RES);
+                initenv(&env, elem->ARG1);
+                initenv(&env, elem->ARG2);
+              }else{
+                initenv(&loc,elem->RES);
+                initenv(&loc, elem->ARG1);
+                initenv(&loc, elem->ARG2);
+              }
+              int res = eval(elem->OP, valch((scope > 0)?loc:env, elem->ARG1) , valch((scope > 0)?loc:env, elem->ARG2));
+              affect((scope > 0)?loc:env, elem->RES, res);
+              elem = elem->SUIV;
         }
         /***Af***/
         else if (elem->OP == Af) {
-            initenv(&env, elem->ARG1);
-            initenv(&env, elem->ARG2);
-            affect(env, elem->ARG1, valch(env, elem->ARG2));
+          if (scope == 0) {
+              initenv(&env, elem->ARG1);
+              initenv(&env, elem->ARG2);
+            }else{
+              initenv(&loc, elem->ARG1);
+              initenv(&loc, elem->ARG2);
+            }
+            affect((scope > 0)?loc:env, elem->ARG1, valch((scope > 0)?loc:env, elem->ARG2));
             elem = elem->SUIV;
         }
         /***Jp***/
@@ -133,32 +146,44 @@ int main(int argc, char *argv[]) {
         else if (elem->OP == Jz) {
             QUAD listStart = list.debut;
             char *dest = elem->RES;
-            if(valch(env, elem->ARG1) == 0){
-                while (strcmp(listStart->ETIQ,dest) != 0){
-                    listStart = listStart->SUIV;
-                }
-                elem=listStart;
+            if (scope == 0){
+              if(valch(env, elem->ARG1) == 0){
+                  while (strcmp(listStart->ETIQ,dest) != 0){
+                      listStart = listStart->SUIV;
+                  }
+                  elem=listStart;
+              }else{
+                  elem = elem->SUIV;
+              }
             }else{
-                elem = elem->SUIV;
+              if(valch(loc, elem->ARG1) == 0){
+                  while (strcmp(listStart->ETIQ,dest) != 0){
+                      listStart = listStart->SUIV;
+                  }
+                  elem=listStart;
+              }else{
+                  elem = elem->SUIV;
+              }
             }
         } else if (elem->OP == St){
             break;
         } else if (elem->OP == Sk){
             elem = elem->SUIV;
         } else if (elem->OP == Call){
+          scope++;
           // ca1
           QUAD listStart = list.debut;
-          char *dest = elem->RES;
+          char *dest = elem->ARG1;
           current = dest;
-          //ca2
+          loc = param;
+          //ca2 Retrait des paramètres de l'environnement paramétrique
           int nbArg = atoi(elem->ARG2);
+          Push(&S,param);
           for(int i = 0; i < nbArg; i++)
             removeLastFromEnv(param);
-          loc = Envalloc();
           //ca3
           initenv(&loc,elem->ARG1);
           Push(&S,elem->SUIV);
-          Push(&S,param);
           free(param);
           param = Envalloc();
           while (strcmp(listStart->ETIQ,dest) != 0){
@@ -166,49 +191,36 @@ int main(int argc, char *argv[]) {
             }
           elem = listStart;//Stack WIP
         } else if (elem->OP == Ret){
-          elem->SUIV = (QUAD)Top(&S);//Stack
+          scope--;
+          elem->SUIV = (QUAD)Top(&S);//Récupération de elem->SUIV dans la pile
+          Pop(&S);
+          param = (ENV)Top(&S); //Récupération de l'environnement paramétrique pré-call
           Pop(&S);
           printf("***environnement local %s --- valeurs\n", current);
           ecrire_env(loc);
-          free(loc);
-
+          loc = env;
           param = Envalloc();
           elem = elem->SUIV;
-        } else if (elem->OP == And){
-          initenv(&env, elem->RES);
-          initenv(&env, elem->ARG1);
-          initenv(&env, elem->ARG2);
-          int res = eval(elem->OP, valch(env, elem->ARG1), valch(env, elem->ARG2));
-          affect(env, elem->RES, res);
-          elem = elem->SUIV;
-        } else if (elem->OP == Or){
-          initenv(&env, elem->RES);
-          initenv(&env, elem->ARG1);
-          initenv(&env, elem->ARG2);
-          int res = eval(elem->OP, valch(env, elem->ARG1), valch(env, elem->ARG2));
-          affect(env, elem->RES, res);
-          elem = elem->SUIV;
         } else if (elem->OP == Not){
-          initenv(&env,elem->RES);
-          initenv(&env,elem->ARG1);
-          int res = eval(elem->OP,valch(env,elem->ARG1),valch(env,elem->ARG1));
-          affect(env,elem->RES,res);
+          if (scope == 0){
+            initenv(&env,elem->RES);
+            initenv(&env, elem->ARG1);
+          }else{
+            initenv(&loc,elem->RES);
+            initenv(&loc, elem->ARG1);
+          }
+          int res = eval(elem->OP,valch((scope > 0)?loc:env,elem->ARG1),valch((scope > 0)?loc:env,elem->ARG1));
+          affect((scope > 0)?loc:env,elem->RES,res);
           elem = elem->SUIV;
         } else if (elem->OP == AfInd){
           ;//needs to handle arrays
         } else if (elem->OP == Ind){
           ;//needs to handle arrays
-        } else if (elem->OP == Lt){
-          initenv(&env, elem->RES);
-          initenv(&env, elem->ARG1);
-          initenv(&env, elem->ARG2);
-          int res = eval(elem->OP, valch(env, elem->ARG1), valch(env, elem->ARG2));
-          affect(env, elem->RES, res);
-          elem = elem->SUIV;
         } else if (elem->OP == Param){
+          fprintf(stderr,"A"); // for debug purposes
           initenv(&param,elem->ARG1);
           initenv(&param,elem->ARG2);
-          affect(param,elem->ARG1,valch(env,elem->ARG2));//Ajoute à l'environnement Paramétrique le couple Arg1:=Arg2
+          affect(param,elem->ARG1,valch((scope > 0)?loc:env,elem->ARG2));//Ajoute à l'environnement Paramétrique le couple Arg1:=Arg2
         }
     }
 
