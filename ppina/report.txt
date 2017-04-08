@@ -1,0 +1,38 @@
+===== ENV =====
+Var X1 of type integer
+Value : 0;
+Var X of typeValue : 0;
+Var foo of typeValue : 1;
+===== END =====
+===== ENV =====
+Var X1 of type integer
+Value : 0;
+Var X of typeValue : 1;
+Var foo of typeValue : 1;
+===== END =====
+===== ENV =====
+Var X1 of type integer
+Value : 0;
+Var X of typeValue : 2;
+Var foo of typeValue : 1;
+===== END =====
+===== ENV =====
+Var X1 of type integer
+Value : 0;
+Var X of typeValue : 3;
+Var foo of typeValue : 1;
+===== END =====
+===== ENV =====
+Var X1 of type integer
+Value : 0;
+Var X of typeValue : 4;
+Var foo of typeValue : 1;
+===== END =====
+===== ENV =====
+Var X1 of type integer
+Value : 1;
+===== END =====
+===== ENV =====
+Var X1 of type integer
+Value : 1;
+===== END =====

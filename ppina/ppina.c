@@ -57,12 +57,22 @@ pp_value env_create_array(int size, pp_type type)
 
 pp_var exe_add_variable(char* name, pp_context context, pp_type type)
 {
-	pp_var v = (pp_var) malloc(sizeof(struct s_pp_var));
+	int new = 0;
+	pp_var v = exe_get_variable(name, context);
+	if (v == NULL)
+		new = 1;
+	
+	if (new)
+		v = (pp_var) malloc(sizeof(struct s_pp_var));
+	
 	v->name = strdup(name);
 	v->type = NULL;
-	v->next = NULL; //Only value matters
+	//v->next = NULL; //Only value matters
 	v->value = env_create_value(type, 0, NULL);
 	
+	if (new)
+	{
+		
 	if (context->current_context != NULL)
 		context->current_context->next = v;
 		
@@ -70,6 +80,7 @@ pp_var exe_add_variable(char* name, pp_context context, pp_type type)
 		context->context = v;
 		
 	context->current_context = v;
+	}
 	
 	return v;
 }
@@ -198,12 +209,6 @@ pp_var exe_get_variable(char* name, pp_context context)
 	while (v != NULL && strcmp(v->name, name))
 	{
 		v = v->next;
-	}
-	
-	if (v == NULL)
-	{
-		fprintf(stderr, "%s\n", name);
-		err_display("Variable not found :(");
 	}
 	
 	return v;
@@ -791,16 +796,22 @@ void syna_execute(syna_node root, pp_context context)
 			break;
 		
 		case NOPI:
+{
+	
 			//Check if both values are of type Integer 
 			syna_execute(root->childs[0], context);
+			pp_var __a__ = exe_add_variable("__a__", context, syna_create_type(INT, NULL));
+			__a__->value = env_create_value(syna_create_type(INT, NULL), root->childs[0]->value->value, NULL);
+			__a__->value->value = root->childs[0]->value->value;
 			syna_execute(root->childs[1], context);
+			pp_var __b__ = exe_add_variable("__b__", context, syna_create_type(INT, NULL));
+			__b__->value = env_create_value(syna_create_type(INT, NULL), root->childs[1]->value->value, NULL);
+			__b__->value->value = root->childs[1]->value->value;
 			if (	err_check_type(root->childs[0]->value->type, syna_create_type(INT, NULL))
 				&&	err_check_type(root->childs[1]->value->type, syna_create_type(INT, NULL)))
 				{
-					int a = root->childs[0]->value->value;
-					int b = root->childs[1]->value->value;
-					//fprintf(stderr, "value of a = %d\n", a);
-					//fprintf(stderr, "value of b = %d\n", b);
+					int a = exe_get_variable("__a__", context)->value->value;
+					int b = exe_get_variable("__b__", context)->value->value;
 					int c;
 					switch (root->opi) {
 						case PL:
@@ -819,14 +830,25 @@ void syna_execute(syna_node root, pp_context context)
 					pp_value v = env_create_value(syna_create_type(INT, NULL), c, NULL);
 					root->value = v;
 				}
+			}
 		break;
 		
 		case NOPB:
+{
 			//Check if both values are of type Boolean
 			if (root->opb != NOT)
+			{
 				syna_execute(root->childs[0], context);
+				pp_var __a__ = exe_add_variable("__a__", context, syna_create_type(INT, NULL));
+				__a__->value = env_create_value(syna_create_type(INT, NULL), root->childs[0]->value->value, NULL);
+				__a__->value->value = root->childs[0]->value->value;
+			}
 			
 			syna_execute(root->childs[1], context);
+			pp_var __b__ = exe_add_variable("__b__", context, syna_create_type(INT, NULL));
+			__b__->value = env_create_value(syna_create_type(INT, NULL), root->childs[1]->value->value, NULL);
+			__b__->value->value = root->childs[1]->value->value;
+
 			int err_status = 1;
 			err_status = (root->childs[1]->value != NULL ? 1 : 0);
 			switch (root->opb) {
@@ -846,10 +868,10 @@ void syna_execute(syna_node root, pp_context context)
 			
 			if (err_status)
 			{
-				int b = root->childs[1]->value->value;
+				int b = exe_get_variable("__b__", context)->value->value;
 				int a = 0;
 				if (root->opb != NOT)
-					a = root->childs[0]->value->value;
+					a = exe_get_variable("__a__", context)->value->value;
 				
 				int c;
 				switch (root->opb) {		//TODO: Optimization
@@ -880,6 +902,7 @@ void syna_execute(syna_node root, pp_context context)
 				err_display("Cannot evalue expression (are members correctly initialized ?)");
 				root->value == NULL;
 			}
+		}
 		break;
 		
 		case NPBA:
@@ -899,7 +922,7 @@ void syna_execute(syna_node root, pp_context context)
 			//pp_var v = env_get_variable(root->string, var_declaration, context);
 			pp_var v = exe_get_variable(root->string, context);
 			root->variable = v;
-			root->value = v->value;
+			root->value = env_create_value(v->value->type, v->value->value, NULL);;
 			//fprintf(stderr, "okvar : %s : %d\n", root->string, root->value->value);
 			}
 		break;
@@ -992,7 +1015,9 @@ void syna_execute(syna_node root, pp_context context)
 			syna_execute(root->childs[0], context);
 			if (err_check_type(root->childs[1]->value->type, root->childs[0]->value->type))
 			{
-				root->childs[0]->variable->value = root->childs[1]->value;
+				root->childs[0]->variable->value->value = root->childs[1]->value->value;
+				//env_display(context);
+				//root->childs[0]->variable->value = root->childs[1]->value;
 			}
 			
 			break;
@@ -1077,13 +1102,13 @@ void syna_execute(syna_node root, pp_context context)
 					env_link_arguments(root->childs[0], context, new_context, f);
 					pp_var ret = exe_add_variable(f->name, new_context, f->ret_type);
 					ret->scope = LOCAL;
-					fprintf(stdout, "self before exec\n");
-					env_display(context);
+					//fprintf(stdout, "us before exec\n");
+					//env_display(context);
 					syna_execute(f->body, new_context);
-					fprintf(stdout, "self after exec\n");
-					env_display(context);
+					//fprintf(stdout, "us after exec\n");
+					//env_display(context);
 					//root->value = env_create_value(f->ret_type, vvv->value->value, NULL);
-					root->value = ret->value;
+					root->value->value = ret->value->value;
 					////env_change_context("main_program", 0);
 				}
 		}
@@ -1330,7 +1355,9 @@ void env_display(pp_context context)
 		pp_var v_root = context->context;
 		while (v_root != NULL)
 		{
-			
+			if (strcmp(v_root->name, "__a__") && strcmp(v_root->name, "__b__"))
+			{
+				
 			printf("Var %s of type", v_root->name);
 			pp_type t_current = v_root->type;
 			while (t_current != NULL)
@@ -1360,8 +1387,9 @@ void env_display(pp_context context)
 			
 			//printf(" in context '%s'.\n", f->name);
 			env_display_value(v_root->value, 1);
-			v_root = v_root->next;
 		}
+			v_root = v_root->next;
+	}
 		
 		//f = f->next;
 	//}
