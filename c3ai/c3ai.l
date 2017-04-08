@@ -17,31 +17,29 @@ char *argcpy(char *src){
 %s OPE ARG_1 ARG_2 DEST
 %%
 
-[A-Za-z]+ { //fun
-  BEGIN OPE; free(etiq); etiq=argcpy(yytext);
-}
-(JMP|ET)[0-9]+                {
+
+((JMP|ET)[0-9]+)|[A-Za-z]+                {
                             BEGIN OPE; free(etiq); etiq=argcpy(yytext);
                         }
 <OPE>:[A-Za-z]+         {
                             BEGIN ARG_1;
-                            if(strncmp("Pl",yytext+1,2)==0) {
+                            if(strncmp("Pl",yytext+1,2)==0){
                                 operation = Pl;
-                            } else if (strncmp("Mo",yytext+1,2)==0) {
+                            } else if (strncmp("Mo",yytext+1,2)==0){
                                 operation = Mo;
-                            } else if (strncmp("Mu",yytext+1,2)==0) {
+                            } else if (strncmp("Mu",yytext+1,2)==0){
                                 operation = Mu;
-                            } else if (strncmp("Afc",yytext+1,3)==0) {
+                            } else if (strncmp("Afc",yytext+1,3)==0){
                                 operation = Afc;
-                            } else if (strncmp("Af",yytext+1,2)==0) {
+                            } else if (strncmp("Af",yytext+1,2)==0){
                                 operation = Af;
-                            } else if (strncmp("Sk",yytext+1,2)==0) {
+                            } else if (strncmp("Sk",yytext+1,2)==0){
                                 operation = Sk;
-                            } else if (strncmp("Jp",yytext+1,2)==0) {
+                            } else if (strncmp("Jp",yytext+1,2)==0){
                                 operation = Jp;
-                            } else if (strncmp("Jz",yytext+1,2)==0) {
+                            } else if (strncmp("Jz",yytext+1,2)==0){
                                 operation = Jz;
-                            } else if (strncmp("St",yytext+1,2)==0) {
+                            } else if (strncmp("St",yytext+1,2)==0){
                                 operation = St;
                             } else if (strncmp("And",yytext+1,3)==0){
                                 operation = And;
@@ -148,12 +146,21 @@ int main(int argc, char *argv[]) {
         } else if (elem->OP == Sk){
             elem = elem->SUIV;
         } else if (elem->OP == Call){
+          // ca1
           QUAD listStart = list.debut;
           char *dest = elem->RES;
           current = dest;
+          //ca2
+          int nbArg = atoi(elem->ARG2);
+          for(int i = 0; i < nbArg; i++)
+            removeLastFromEnv(param);
           loc = Envalloc();
+          //ca3
           initenv(&loc,elem->ARG1);
           Push(&S,elem->SUIV);
+          Push(&S,param);
+          free(param);
+          param = Envalloc();
           while (strcmp(listStart->ETIQ,dest) != 0){
               listStart = listStart->SUIV;
             }
@@ -164,7 +171,7 @@ int main(int argc, char *argv[]) {
           printf("***environnement local %s --- valeurs\n", current);
           ecrire_env(loc);
           free(loc);
-          free(param);
+
           param = Envalloc();
           elem = elem->SUIV;
         } else if (elem->OP == And){

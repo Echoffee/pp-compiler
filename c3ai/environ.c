@@ -110,3 +110,12 @@ int valch(ENV rho, char *var)
   else
     return(0);
 }
+
+void removeLastFromEnv(ENV rho)
+{
+    if (rho->SUIV == NULL){
+      rho = NULL;
+    } else {
+      removeLastFromEnv(rho);
+    }
+}
