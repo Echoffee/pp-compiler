@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
         } else if (elem->OP == Param){
           initenv(&param,elem->ARG1);
           initenv(&param,elem->ARG2);
-          affect(env,elem->ARG1,valch(env,elem->ARG2));//Ajoute à l'environnement Paramétrique le couple Arg1:=Arg2
+          affect(param,elem->ARG1,valch(env,elem->ARG2));//Ajoute à l'environnement Paramétrique le couple Arg1:=Arg2
         }
     }
 
