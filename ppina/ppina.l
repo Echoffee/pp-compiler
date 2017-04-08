@@ -28,7 +28,6 @@
 "and" { return And; }
 "or" { return Or; }
 "not" { return Not; }
-"<=" { return Lt; }
 "<" { return Lt; }
 "=" { return Eq; }
 [ \t] { }

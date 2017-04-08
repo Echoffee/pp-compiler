@@ -888,7 +888,7 @@ void syna_execute(syna_node root, pp_context context)
 						break;
 					
 					case LT:
-						c = (a <= b ? 1 : 0);
+						c = (a < b ? 1 : 0);
 						break;
 						
 					case EQ:
@@ -922,7 +922,8 @@ void syna_execute(syna_node root, pp_context context)
 			//pp_var v = env_get_variable(root->string, var_declaration, context);
 			pp_var v = exe_get_variable(root->string, context);
 			root->variable = v;
-			root->value = env_create_value(v->value->type, v->value->value, NULL);;
+			//root->value = env_create_value(v->value->type, v->value->value, NULL);;
+			root->value = v->value;
 			//fprintf(stderr, "okvar : %s : %d\n", root->string, root->value->value);
 			}
 		break;
@@ -932,7 +933,8 @@ void syna_execute(syna_node root, pp_context context)
 			err_check_type(root->childs[1]->value->type, syna_create_type(INT, NULL));
 			syna_execute(root->childs[0], context);//array-side
 			//root->value->type = syna_create_type(ARRAY, root->childs[0]->value->type);
-			root->value->type = root->childs[0]->value->type->next;
+			root->value = env_create_value(root->childs[0]->value->type->next, 0, NULL);
+			//root->value->type = root->childs[0]->value->type->next;
 			if (root->childs[0]->value == NULL)
 				err_display("Value has not been initialized");
 				
@@ -956,8 +958,8 @@ void syna_execute(syna_node root, pp_context context)
 			syna_execute(root->childs[1], context); //Size
 			if (err_check_type(root->childs[1]->value->type, syna_create_type(INT, NULL)))
 			{
-				root->value->type = syna_create_type(ARRAY, root->childs[0]->value->type);
 				root->value = env_create_array(root->childs[1]->value->value, root->childs[0]->value->type);
+				//root->value->type = syna_create_type(ARRAY, root->childs[0]->value->type);
 			}
 		break;
 		
@@ -1016,6 +1018,8 @@ void syna_execute(syna_node root, pp_context context)
 			if (err_check_type(root->childs[1]->value->type, root->childs[0]->value->type))
 			{
 				root->childs[0]->variable->value->value = root->childs[1]->value->value;
+				root->childs[0]->variable->value->members = root->childs[1]->value->members;
+				root->childs[0]->variable->value->members_count = root->childs[1]->value->members_count;
 				//env_display(context);
 				//root->childs[0]->variable->value = root->childs[1]->value;
 			}
@@ -1165,7 +1169,8 @@ void syna_check(syna_node root, pp_context context)
 		
 		case NPBA:
 		   syna_check(root->childs[0], context);
-		   root->value->type = root->childs[0]->value->type;
+		   //root->value->type = root->childs[0]->value->type;
+		  // root->value = env_create_value(root->childs[0]->value->type, 0, NULL);
 		   root->value = root->childs[0]->value;
 		break;
 		
@@ -1186,7 +1191,8 @@ void syna_check(syna_node root, pp_context context)
 			err_check_type(root->childs[1]->value->type, syna_create_type(INT, NULL));
 			syna_check(root->childs[0], context);//array-side
 			//root->value->type = syna_create_type(ARRAY, root->childs[0]->value->type);
-			root->value->type = root->childs[0]->value->type->next;
+			root->value = env_create_value(root->childs[0]->value->type->next, 0, NULL);
+			//root->value->type = root->childs[0]->value->type->next;
 			//fprintf(stderr, "%d\n", root->childs[0]->value->type->type);
 		break;
 		
@@ -1329,7 +1335,8 @@ void env_display_value(pp_value v, int root)
 					break;
 					
 					case ARRAY:
-					printf("size : %d [", v->members_count);
+					//printf("size : %d [", v->members_count);
+					printf("[");
 					for (int i = 0; i < v->members_count; i++)
 					{
 						env_display_value(v->members[i], 0);
@@ -1381,10 +1388,10 @@ void env_display(pp_context context)
 					break;
 				}
 				
-				printf(" %s\n", s);
+				printf(" %s", s);
 				t_current = t_current->next;
 			}
-			
+			printf("\n");
 			//printf(" in context '%s'.\n", f->name);
 			env_display_value(v_root->value, 1);
 		}
