@@ -1,4 +1,4 @@
-enum e_pp_type_id { NONE, INT, BOOL, ARRAY, RET};
+enum e_pp_type_id { NONE, INT, BOOL, ARRAY, GOTO};
 enum e_syna_opi { INONE, PL, MO, MU };
 enum e_syna_opb { BNONE, OR, LT, EQ, AND, NOT};
 //                       0     1     2     3     4     5       6     7        8        9      10    11   12   13   14        15    16     17     18      19     20     21       22      23
@@ -10,6 +10,17 @@ typedef enum e_syna_opb syna_opb;
 typedef enum e_syna_node_id syna_node_id;
 typedef enum e_pp_var_scope pp_var_scope;
 typedef struct s_syna_node* syna_node;
+
+struct s_c3a_out{
+	char* etq;
+	char* op;
+	char* arg1;
+	char* arg2;
+	char* dst;
+	struct s_c3a_out* next;
+};
+
+typedef struct s_c3a_out* c3a_out;
 
 struct s_pp_type{
 	pp_type_id type;
@@ -125,3 +136,5 @@ void env_display(pp_context context);
 void exe_stop();
 pp_var exe_get_variable(char* name, pp_context context);
 pp_context exe_create_context();
+
+void out_write(int etq, char* op, char* arg1, char* arg2, char* dst);
