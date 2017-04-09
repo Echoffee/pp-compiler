@@ -20,14 +20,14 @@ Deadline : **Monday, April 10th at 11:59pm**
 ### Optional tasks
 
 - C3A -> Y86 compiler
-- Enhance memory usage of the Y86 program made with the compiler 
+- Enhance memory usage of the Y86 program made with the compiler
 
 ## Checklist
 Ex 	  | ppsyna | ppsema	 | ppina | ppc3ac | c3ai |
 ------|--------|---------|-------|--------|------|
-Pex1  | ✔️ 	  |	✔️		|✔️		|		 |		|
-Pex2  | ✔️ 	  |	✔️		|✔️		|		 |		|
-Pex3  | ✔️ 	  |	✔️(多分)|✔️	  |		 |		|
+Pex1  | ✔️ 	  |	✔️		|✔️		|		 |		| ✔️
+Pex2  | ✔️ 	  |	✔️		|✔️		|		 |		| ✔️
+Pex3  | ✔️ 	  |	✔️(多分)|✔️	  |		 |		| ✔️
 Pex4  | ✔️ 	  |	✔️		|✔️		|		 |		|
 Pex5  | ✔️ 	  |	✔️		|✔️		|		 |		|
 Pex6  | ✔️ 	  |	✔️		|✔️		|		 |		|
@@ -43,7 +43,7 @@ Pex23 | ✔️	  |	✔️(多分)|✔️	  |		 |		|
 Pex24 | ✔️	  |	✔️		|✔️		|		 |		|
 Pex25 | ✔️	  |	✔️		|✔️		|		 |		|
 
-✔️ : Pass 
+✔️ : Pass
 
 🀄 : Partially functional
 

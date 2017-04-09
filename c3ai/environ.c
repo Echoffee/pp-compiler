@@ -140,8 +140,9 @@ int ar_read(array* arr, int i)
     fprintf(stderr,"Index is out of bounds, value set to 0\n");
     return 0;
   }
-  else
+  else{
     return arr->values[i];
+  }
 }
 
 void ar_write(array* arr, int i, int val)
@@ -154,7 +155,7 @@ void ar_write(array* arr, int i, int val)
 
 int initenv_ar(ENV *prho,char *t,int i,int size)
 {ENV pos, newcell;
-  pos=rech_ar(t,i,*prho);/* adresse de la cellule contenant var */
+  pos=rech_ar(t,*prho);/* adresse de la cellule contenant var */
   if (pos == NULL)
     /*on insere var en tete de envrnt*/
     { newcell=Envalloc();
@@ -173,19 +174,20 @@ int initenv_ar(ENV *prho,char *t,int i,int size)
 
 int valch_ar(ENV rho, char *t, int i)
 {ENV pos;
-  pos=rech_ar(t,i,rho);/* adresse de la cellule contenant var */
-  if (pos != NULL)
+  pos=rech_ar(t,rho);/* adresse de la cellule contenant var */
+  if (pos != NULL){
     return(ar_read(pos->AR,i));
+  }
   else
     return(0);
 }
 
-ENV rech_ar(char *t, int i, ENV listident)
+ENV rech_ar(char *t, ENV listident)
 {if (listident!=NULL)
     {if (listident->ID && strcmp(listident->ID,t)==0 && listident->AR)
         {return listident;}
       else
-	return rech_ar(t,i,listident->SUIV);
+	return rech_ar(t,listident->SUIV);
     }
   else
     return NULL;
@@ -193,7 +195,7 @@ ENV rech_ar(char *t, int i, ENV listident)
 
 int affect_ar(ENV rho, char *t,int i, int val)
 {ENV pos;
-  pos=rech_ar(t,i,rho);/* adresse de la cellule contenant var */
+  pos=rech_ar(t,rho);/* adresse de la cellule contenant var */
   if (pos != NULL)
     {ar_write(pos->AR,i,val);
       return(EXIT_SUCCESS);

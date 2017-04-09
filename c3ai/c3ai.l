@@ -215,14 +215,14 @@ int main(int argc, char *argv[]) {
             initenv(&loc, elem->ARG1);
           }
           int res = eval(elem->OP,valch((scope > 0 && rech(elem->ARG1,loc)!=NULL)?loc:env,elem->ARG1),valch((scope > 0 && rech(elem->ARG1,loc)!=NULL)?loc:env,elem->ARG1));
-          affect((scope > 0)?loc:env,elem->RES,res);
+          affect((scope > 0 && rech(elem->RES,loc))?loc:env,elem->RES,res);
           elem = elem->SUIV;
         } else if (elem->OP == AfInd){
           char cons[18];
           strcpy(cons,"CT");
           strcat(cons,elem->ARG1);
           initenv((scope>0 && rech(elem->RES,loc) != NULL)?&loc:&env,elem->RES);
-          initenv_ar((scope>0 && rech(elem->ARG1,loc) != NULL)?&loc:&env,elem->ARG1,valch((scope > 0 && rech(elem->ARG2,loc) !=NULL)?loc:env,elem->ARG2),valch((scope > 0 && rech(cons,loc) != NULL)?loc:env,cons));
+          initenv_ar((scope>0)?&loc:&env,elem->ARG1,valch((scope > 0 && rech(elem->ARG2,loc) !=NULL)?loc:env,elem->ARG2),valch((scope > 0 && rech(cons,loc) != NULL)?loc:env,cons));
           affect_ar((scope > 0 && rech(elem->ARG1,loc) != NULL)?loc:env,elem->ARG1,valch((scope > 0 && rech(elem->ARG2,loc) != NULL)?loc:env,elem->ARG2),valch((scope > 0 && rech(elem->RES,loc) != NULL)?loc:env,elem->RES));
           //needs to handle arrays
           elem=elem->SUIV;
