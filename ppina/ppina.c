@@ -606,8 +606,8 @@ void env_link_arguments(syna_node root, pp_context current_context, pp_context c
 {
 	switch (root->type) {
 		case NBRANCH:
-			env_link_arguments(root->childs[0], current_context, context,f);
 			env_link_arguments(root->childs[1], current_context, context,f);
+			env_link_arguments(root->childs[0], current_context, context,f);
 			break;
 			
 		default:
@@ -620,8 +620,9 @@ void env_link_arguments(syna_node root, pp_context current_context, pp_context c
 			//pp_value vv = (pp_value) malloc(sizeof(struct s_pp_value));
 			//vv->value = root->value->value;
 			//vv->type = root->value->type;
-			int val = root->value->value;
-			n->value->value = val;
+			n->value->value = root->value->value;
+			n->value->members = root->value->members;
+			n->value->members_count = root->value->members_count;
 			f->args_current = f->args_current->next;
 		break;
 	}
@@ -791,8 +792,10 @@ void syna_execute(syna_node root, pp_context context)
 			var_declaration = 1;
 			syna_execute(root->childs[0], context);
 			var_declaration = 0;
-			syna_execute(root->childs[1], context);
-			syna_execute(root->childs[2], context);
+			pp_context nc = exe_copy_context(context);
+			syna_execute(root->childs[1], nc);
+			//fprintf(stderr, "exec\n");
+			syna_execute(root->childs[2], nc);
 			break;
 		
 		case NOPI:
@@ -1107,7 +1110,7 @@ void syna_execute(syna_node root, pp_context context)
 					pp_var ret = exe_add_variable(f->name, new_context, f->ret_type);
 					ret->scope = LOCAL;
 					//fprintf(stdout, "us before exec\n");
-					//env_display(context);
+					//env_display(new_context);
 					syna_execute(f->body, new_context);
 					//fprintf(stdout, "us after exec\n");
 					//env_display(context);
