@@ -12,7 +12,7 @@ c3ai.yy.c: c3ai.l
 	$(LEX) -o $@ $<
 
 c3ai: c3ai.yy.c bilquad.o environ.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) -g $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 
 clean:

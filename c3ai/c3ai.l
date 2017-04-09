@@ -19,7 +19,7 @@ char *argcpy(char *src){
 
 
 
-((JMP|ET)[0-9]+)|ET[A-Z]{1,16}          {
+((JMP|ET)[0-9]+)|ET[A-Za-z0-9]{1,16}          {
                             BEGIN OPE; free(etiq); etiq=argcpy(yytext);
                         }
 <OPE>:[A-Za-z]+         {
@@ -30,6 +30,8 @@ char *argcpy(char *src){
                                 operation = Mo;
                             } else if (strncmp("Mu",yytext+1,2)==0){
                                 operation = Mu;
+                            } else if (strncmp("AfInd",yytext+1,5)==0){
+                                operation = AfInd;
                             } else if (strncmp("Afc",yytext+1,3)==0){
                                 operation = Afc;
                             } else if (strncmp("Af",yytext+1,2)==0){
@@ -52,8 +54,6 @@ char *argcpy(char *src){
                                 operation = Ind;
                             } else if (strncmp("Not",yytext+1,3)==0){
                                 operation = Not;
-                            } else if (strncmp("AfInd",yytext+1,5)==0){
-                                operation = AfInd;
                             } else if (strncmp("Param",yytext+1,5)==0){
                                 operation = Param;
                             } else if (strncmp("Call",yytext+1,4)==0){
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
           while (strcmp(listStart->ETIQ,dest) != 0){
               listStart = listStart->SUIV;
             }
-          elem = listStart;//Stack WIP
+          elem = listStart;
         } else if (elem->OP == Ret){
           scope--;
           elem->SUIV = (QUAD)Top(&S);//Récupération de elem->SUIV dans la pile
@@ -216,9 +216,23 @@ int main(int argc, char *argv[]) {
           affect((scope > 0)?loc:env,elem->RES,res);
           elem = elem->SUIV;
         } else if (elem->OP == AfInd){
-          ;//needs to handle arrays
+          char cons[18];
+          strcpy(cons,"CT");
+          strcat(cons,elem->ARG1);
+          initenv((scope>0)?&loc:&env,elem->RES);
+          initenv_ar((scope>0)?&loc:&env,elem->ARG1,valch((scope > 0)?loc:env,elem->ARG2),valch((scope > 0)?loc:env,cons));
+          affect_ar((scope > 0)?loc:env,elem->ARG1,valch((scope > 0)?loc:env,elem->ARG2),valch((scope > 0)?loc:env,elem->RES));
+          //needs to handle arrays
+          elem=elem->SUIV;
         } else if (elem->OP == Ind){
-          ;//needs to handle arrays
+          char cons[18];
+          strcpy(cons,"CT");
+          strcat(cons,elem->ARG1);
+          initenv((scope>0)?&loc:&env,elem->RES);
+          initenv_ar((scope>0)?&loc:&env,elem->ARG1,valch((scope > 0)?loc:env,elem->ARG2),valch((scope > 0)?loc:env,cons));
+          affect((scope > 0)?loc:env,elem->RES,valch_ar((scope > 0)?loc:env,elem->ARG1,valch((scope > 0)?loc:env,elem->ARG2)));
+          //needs to handle arrays
+          elem = elem->SUIV;
         } else if (elem->OP == Param){
           initenv(&param,elem->ARG1);
           initenv(&param,elem->ARG2);
