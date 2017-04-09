@@ -93,7 +93,6 @@ int main(int argc, char *argv[]) {
     ENV env = Envalloc();
     ENV param = Envalloc();
     ENV loc = Envalloc();
-    ENV tmploc;
     char* current = NULL;
     int scope = 0;
     QUAD elem;
@@ -168,7 +167,7 @@ int main(int argc, char *argv[]) {
         } else if (elem->OP == Sk){
             elem = elem->SUIV;
         } else if (elem->OP == Call){
-          tmploc = loc;
+          Push(&S,loc);
           scope++;
           // ca1
           QUAD listStart = list.debut;
@@ -181,11 +180,9 @@ int main(int argc, char *argv[]) {
           for(int i = 0; i < nbArg; i++)
             removeLastFromEnv(param);
           //ca3
-          initenv(&loc,elem->ARG1);
           initenv(&loc, &(elem->ARG1[2]));
           Push(&S,elem->SUIV);
-          free(param);
-          param = Envalloc();
+          param = NULL;
           //ca4
           while (strcmp(listStart->ETIQ,dest) != 0){
               listStart = listStart->SUIV;
@@ -195,14 +192,19 @@ int main(int argc, char *argv[]) {
           scope--;
           elem->SUIV = (QUAD)Top(&S);//Récupération de elem->SUIV dans la pile
           Pop(&S);
-          param = (ENV)Top(&S); //Récupération de l'environnement paramétrique pré-call
+          param = (ENV)Top(&S); // Récupération de l'environnement paramétrique du précédent Call
           Pop(&S);
-          printf("***environnement local fonction/procédure %.16s --- valeurs\n", &current[2]);
+          printf("***appel %d à %.16s --- variables locales\n", scope+1,&current[2]);
           ecrire_env(loc);
-          if (scope == 0)
+          if (scope == 0){
             loc = Envalloc();
-          else loc = tmploc;
-          param = Envalloc();
+            param = Envalloc();
+            Pop(&S);
+          }
+          else{
+            loc = (ENV)Top(&S);
+            Pop(&S);
+          }
           elem = elem->SUIV;
         } else if (elem->OP == Not){
           if (scope == 0){
@@ -235,7 +237,6 @@ int main(int argc, char *argv[]) {
           elem = elem->SUIV;
         } else if (elem->OP == Param){
           initenv(&param,elem->ARG1);
-          initenv(&param,elem->ARG2);
           affect(param,elem->ARG1,valch((scope > 0 && rech(elem->ARG2,loc))?loc:env,elem->ARG2));//Ajoute à l'environnement Paramétrique le couple Arg1:=Arg2
           elem = elem->SUIV;
         }
