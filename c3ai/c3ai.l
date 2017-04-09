@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
     yylex();
     ENV env = Envalloc();
     ENV param = Envalloc();
-    ENV loc = env;
+    ENV loc = Envalloc();
     ENV tmploc;
     char* current = NULL;
     int scope = 0;
@@ -109,17 +109,14 @@ int main(int argc, char *argv[]) {
         }
         /***Pl Mu Mo***/
         else if (elem->OP == Pl || elem->OP == Mu || elem->OP == Mo || elem->OP == Or || elem->OP == And || elem->OP == Lt) {
-              if (scope == 0) {
-                initenv(&env,elem->RES);
-                initenv(&env, elem->ARG1);
-                initenv(&env, elem->ARG2);
-              }else{
-                initenv(&loc,elem->RES);
-                initenv(&loc, elem->ARG1);
-                initenv(&loc, elem->ARG2);
-              }
-              int res = eval(elem->OP, valch((scope > 0)?loc:env, elem->ARG1) , valch((scope > 0)?loc:env, elem->ARG2));
-              affect((scope > 0)?loc:env, elem->RES, res);
+              ENV re = rech(elem->RES,loc);
+              ENV a1 = rech(elem->ARG1,loc);
+              ENV a2 = rech(elem->ARG2,loc);
+              initenv((re)?&loc:&env,elem->RES);
+              initenv((a1)?&loc:&env, elem->ARG1);
+              initenv((a2)?&loc:&env, elem->ARG2);
+              int res = eval(elem->OP, valch((scope > 0 && rech(elem->ARG1,loc)!= NULL)?loc:env, elem->ARG1) , valch((scope > 0 && rech(elem->ARG2,loc) != NULL)?loc:env, elem->ARG2));
+              affect((scope > 0 && rech(elem->RES,loc) != NULL)?loc:env, elem->RES, res);
               elem = elem->SUIV;
         }
         /***Af***/
@@ -131,7 +128,7 @@ int main(int argc, char *argv[]) {
               initenv(&loc, elem->ARG1);
               initenv(&loc, elem->ARG2);
             }
-            affect((scope > 0)?loc:env, elem->ARG1, valch((scope > 0)?loc:env, elem->ARG2));
+            affect((scope > 0 && rech(elem->ARG1,loc) != NULL)?loc:env, elem->ARG1, valch((scope > 0 && rech(elem->ARG2,loc) != NULL)?loc:env, elem->ARG2));
             elem = elem->SUIV;
         }
         /***Jp***/
@@ -146,7 +143,8 @@ int main(int argc, char *argv[]) {
         else if (elem->OP == Jz) {
             QUAD listStart = list.debut;
             char *dest = elem->RES;
-            if (scope == 0){
+            ENV a1 = rech(elem->ARG1,loc);
+            if (!a1){
               if(valch(env, elem->ARG1) == 0){
                   while (strcmp(listStart->ETIQ,dest) != 0){
                       listStart = listStart->SUIV;
@@ -184,9 +182,11 @@ int main(int argc, char *argv[]) {
             removeLastFromEnv(param);
           //ca3
           initenv(&loc,elem->ARG1);
+          initenv(&loc, &(elem->ARG1[2]));
           Push(&S,elem->SUIV);
           free(param);
           param = Envalloc();
+          //ca4
           while (strcmp(listStart->ETIQ,dest) != 0){
               listStart = listStart->SUIV;
             }
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
           printf("***environnement local fonction/procédure %.16s --- valeurs\n", &current[2]);
           ecrire_env(loc);
           if (scope == 0)
-            loc = env;
+            loc = Envalloc();
           else loc = tmploc;
           param = Envalloc();
           elem = elem->SUIV;
@@ -212,31 +212,31 @@ int main(int argc, char *argv[]) {
             initenv(&loc,elem->RES);
             initenv(&loc, elem->ARG1);
           }
-          int res = eval(elem->OP,valch((scope > 0)?loc:env,elem->ARG1),valch((scope > 0)?loc:env,elem->ARG1));
+          int res = eval(elem->OP,valch((scope > 0 && rech(elem->ARG1,loc)!=NULL)?loc:env,elem->ARG1),valch((scope > 0 && rech(elem->ARG1,loc)!=NULL)?loc:env,elem->ARG1));
           affect((scope > 0)?loc:env,elem->RES,res);
           elem = elem->SUIV;
         } else if (elem->OP == AfInd){
           char cons[18];
           strcpy(cons,"CT");
           strcat(cons,elem->ARG1);
-          initenv((scope>0)?&loc:&env,elem->RES);
-          initenv_ar((scope>0)?&loc:&env,elem->ARG1,valch((scope > 0)?loc:env,elem->ARG2),valch((scope > 0)?loc:env,cons));
-          affect_ar((scope > 0)?loc:env,elem->ARG1,valch((scope > 0)?loc:env,elem->ARG2),valch((scope > 0)?loc:env,elem->RES));
+          initenv((scope>0 && rech(elem->RES,loc) != NULL)?&loc:&env,elem->RES);
+          initenv_ar((scope>0 && rech(elem->ARG1,loc) != NULL)?&loc:&env,elem->ARG1,valch((scope > 0 && rech(elem->ARG2,loc) !=NULL)?loc:env,elem->ARG2),valch((scope > 0 && rech(cons,loc) != NULL)?loc:env,cons));
+          affect_ar((scope > 0 && rech(elem->ARG1,loc) != NULL)?loc:env,elem->ARG1,valch((scope > 0 && rech(elem->ARG2,loc) != NULL)?loc:env,elem->ARG2),valch((scope > 0 && rech(elem->RES,loc) != NULL)?loc:env,elem->RES));
           //needs to handle arrays
           elem=elem->SUIV;
         } else if (elem->OP == Ind){
           char cons[18];
           strcpy(cons,"CT");
           strcat(cons,elem->ARG1);
-          initenv((scope>0)?&loc:&env,elem->RES);
-          initenv_ar((scope>0)?&loc:&env,elem->ARG1,valch((scope > 0)?loc:env,elem->ARG2),valch((scope > 0)?loc:env,cons));
-          affect((scope > 0)?loc:env,elem->RES,valch_ar((scope > 0)?loc:env,elem->ARG1,valch((scope > 0)?loc:env,elem->ARG2)));
+          initenv((scope>0 && rech(elem->RES,loc))?&loc:&env,elem->RES);
+          initenv_ar((scope>0 && rech(elem->ARG1,loc))?&loc:&env,elem->ARG1,valch((scope>0 && rech(elem->ARG2,loc))?loc:env,elem->ARG2),valch((scope > 0 && rech(cons,loc))?loc:env,cons));
+          affect((scope > 0 && rech(elem->RES,loc))?loc:env,elem->RES,valch_ar((scope > 0 && rech(elem->ARG1,loc))?loc:env,elem->ARG1,valch((scope > 0 && rech(elem->ARG2,loc))?loc:env,elem->ARG2)));
           //needs to handle arrays
           elem = elem->SUIV;
         } else if (elem->OP == Param){
           initenv(&param,elem->ARG1);
           initenv(&param,elem->ARG2);
-          affect(param,elem->ARG1,valch((scope > 0)?loc:env,elem->ARG2));//Ajoute à l'environnement Paramétrique le couple Arg1:=Arg2
+          affect(param,elem->ARG1,valch((scope > 0 && rech(elem->ARG2,loc))?loc:env,elem->ARG2));//Ajoute à l'environnement Paramétrique le couple Arg1:=Arg2
           elem = elem->SUIV;
         }
     }
