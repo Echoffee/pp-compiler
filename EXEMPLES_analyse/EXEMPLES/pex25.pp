@@ -23,6 +23,6 @@ defpro proc(Y: integer, Z : boolean)
       X2 := Y
 
 X2 := foo2();
-AA := new array of integer [X2];
+AA := new array of array of integer [X2];
 X1 := not X1;
 X2 := 10

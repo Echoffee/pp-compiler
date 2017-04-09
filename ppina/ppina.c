@@ -66,9 +66,10 @@ pp_var exe_add_variable(char* name, pp_context context, pp_type type)
 		v = (pp_var) malloc(sizeof(struct s_pp_var));
 	
 	v->name = strdup(name);
-	v->type = NULL;
 	//v->next = NULL; //Only value matters
 	v->value = env_create_value(type, 0, NULL);
+	v->type = type;
+	v->func = 0;
 	
 	if (new)
 	{
@@ -110,7 +111,7 @@ pp_var lcl_add_variable(pp_func func, char* name, pp_value value)
 	v->name = strdup(name);
 	v->type = value->type;
 	v->next = NULL;
-	v->value = NULL;
+	v->value = env_create_value(value->type, 0, NULL);
 	if (func->args_current != NULL)
 		func->args_current->next = v;
 		
@@ -207,8 +208,16 @@ pp_var exe_get_variable(char* name, pp_context context)
 {
 	pp_var v = context->context;
 	while (v != NULL && strcmp(v->name, name))
-	{
 		v = v->next;
+
+	if (v == NULL)
+	{
+		if (context->tmp_context != NULL)
+		{
+			v = context->tmp_context;
+			while (v != NULL && strcmp(v->name, name))
+				v = v->next;
+		}
 	}
 	
 	return v;
@@ -609,7 +618,10 @@ void env_link_arguments(syna_node root, pp_context current_context, pp_context c
 			env_link_arguments(root->childs[1], current_context, context,f);
 			env_link_arguments(root->childs[0], current_context, context,f);
 			break;
-			
+		
+		case NEMPTY:
+			break;
+		
 		default:
 			syna_execute(root, current_context);
 			//context->current_context->value = root->value;
@@ -794,7 +806,7 @@ void syna_execute(syna_node root, pp_context context)
 			var_declaration = 0;
 			pp_context nc = exe_copy_context(context);
 			syna_execute(root->childs[1], nc);
-			//fprintf(stderr, "exec\n");
+			fprintf(stderr, "exec\n");
 			syna_execute(root->childs[2], nc);
 			break;
 		
@@ -924,6 +936,8 @@ void syna_execute(syna_node root, pp_context context)
 			//fprintf(stderr, "looking for %s\n", root->string);
 			//pp_var v = env_get_variable(root->string, var_declaration, context);
 			pp_var v = exe_get_variable(root->string, context);
+			if (v->func)
+				err_display("Symbol is a function but is used as a variable");
 			root->variable = v;
 			//root->value = env_create_value(v->value->type, v->value->value, NULL);;
 			root->value = v->value;
@@ -1086,8 +1100,12 @@ void syna_execute(syna_node root, pp_context context)
 		//When called, must execute root->childs[2]
 		var_declaration = 0;
 		root->childs[0]->function->body = root->childs[2];
+		context->tmp_context = root->childs[0]->function->args;
+		pp_var ret = exe_add_variable(root->childs[0]->function->name, context, root->childs[0]->function->ret_type);
+		ret->scope = LOCAL;
 		//env_add_variable(root->childs[0]->string, root->childs[0]->value->type); // Add return value
-		//syna_check(root->childs[2], context);
+		syna_check(root->childs[2], context);
+		ret->func = 1;
 		break;
 		
 		case NFPCALL:
@@ -1185,6 +1203,8 @@ void syna_check(syna_node root, pp_context context)
 			{
 			//Check type
 			pp_var v = exe_get_variable(root->string, context);
+			if (v->func)
+				err_display("Symbol is a function but is used as a variable");
 			root->value = env_create_value(v->value->type, v->value->value, NULL);	
 			}
 		break;
@@ -1204,7 +1224,7 @@ void syna_check(syna_node root, pp_context context)
 			syna_check(root->childs[0], context);
 			syna_check(root->childs[1], context);
 			err_check_type(root->childs[1]->value->type, syna_create_type(INT, NULL));
-			root->value->type = syna_create_type(ARRAY, root->childs[0]->value->type);
+			root->value = env_create_value(syna_create_type(ARRAY, root->childs[0]->value->type), 0, NULL);
 		break;
 		
 		case NBRANCH:

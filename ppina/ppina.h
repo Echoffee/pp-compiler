@@ -33,6 +33,7 @@ struct s_pp_var{
 	pp_type type;
 	pp_value value;
 	pp_var_scope scope;
+	int func;
 	struct s_pp_var* next;
 };
 
@@ -69,6 +70,7 @@ struct s_syna_node{
 struct s_pp_context{
 	pp_var context;
 	pp_var current_context;
+	pp_var tmp_context;
 	pp_value return_value;
 	char* context_name;
 };
