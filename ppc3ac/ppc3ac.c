@@ -19,17 +19,59 @@ pp_var current_arg = NULL;
 
 pp_context main_context = NULL;
 
-c3a_out croot = NULL;
+c3a_out c3a_root = NULL;
+c3a_out c3a_f = NULL;
 c3a_out ccurrent = NULL;
+c3a_out cfcurrent = NULL;
 int c3a_global_line = 0;
 int c3a_global_var = 0;
+int c3a_global_arr = 0;
+int fun = 0;
+
+int is_af = 0;
+int dp = 0;
+int lcl = 0;
+int dim = 0;
+
+c3a_a aroot = NULL;
+c3a_a acurrent = NULL;
+
+c3a_a a_new(char* name)
+{
+	c3a_a a = (c3a_a) malloc(sizeof(struct s_c3a_a));
+	a->size = 0;
+	a->next = NULL;
+	a->name = strdup(name);
+	
+	if (aroot == NULL)
+		aroot = a;
+		
+	if (acurrent != NULL)
+		acurrent->next = a;
+		
+	acurrent = a;
+	return a;
+}
+
+c3a_a a_get(char* name)
+{
+	c3a_a r = aroot;
+	while (r != NULL && strcmp(name, r->name))
+		r = r->next;
+		
+	if (r == NULL)
+		r = a_new(name);
+		
+	return r;
+}
+
 void c3a_add_line(char* etq, char* op, char* arg1, char* arg2, char* dst)
 {
 	c3a_out c = (c3a_out) malloc(sizeof(struct s_c3a_out));
 	
 	char* s = (char*) malloc(sizeof(char) * C3A_ETQ_LENGTH);
-	if (etqname != NULL)
-		sprintf(s, "ET%s", etq);
+	if (etq != NULL)
+		sprintf(s, "%s", etq);
 	else
 	{
 		sprintf(s, "ET%d", c3a_global_line);
@@ -38,25 +80,46 @@ void c3a_add_line(char* etq, char* op, char* arg1, char* arg2, char* dst)
 	
 	c->etq = s;
 	
+	char* g = strdup("");
 	if (op != NULL)
 		c->op = strdup(op);
+	else
+		c->op = g;
 		
 	if (arg1 != NULL)
 		c->arg1 = strdup(arg1);
+	else
+		c->arg1 = g;
 		
 	if (arg2 != NULL)
 		c->arg2 = strdup(arg2);
+	else
+		c->arg2 = g;
 		
 	if (dst != NULL)
 		c->dst = strdup(dst);
+	else
+		c->dst = g;
 		
+		if (fun)
+		{
+			if (cfcurrent != NULL)
+				cfcurrent->next = c;
+				
+			if (c3a_f == NULL)
+				c3a_f = c;
+				
+			cfcurrent = c;	
+		}else{
+			
 	if (ccurrent != NULL)
 		ccurrent->next = c;
 		
-	if (croot == NULL)
-		croot = c;
+	if (c3a_root == NULL)
+		c3a_root = c;
 		
 	ccurrent = c;
+}
 }
 
 char* c3a_new_value(pp_type_id type)
@@ -64,15 +127,26 @@ char* c3a_new_value(pp_type_id type)
 	char* s = (char*) malloc(sizeof(char) * C3A_ETQ_LENGTH);
 	switch (type) {
 		case INT:
-			sprintf(s, "INT%d", c3a_global_var);
+			sprintf(s, "CT%d", c3a_global_var);
 			break;
 		
 		case BOOL:
-			sprintf(s, "BOOL%d", c3a_global_var);
+			sprintf(s, "CT%d", c3a_global_var);
+			break;
+		
+		case ARRAY:
+			sprintf(s, "AR%d", c3a_global_arr);
+			break;
+		
+		case GOTO:
+			sprintf(s, "ETDEF%d", c3a_global_var);
 			break;
 	}
 	
-	c3a_global_var++;
+	if (type != ARRAY)
+		c3a_global_var++;
+	else
+		c3a_global_arr++;
 	
 	return s;
 }
@@ -182,7 +256,7 @@ pp_var lcl_add_variable(pp_func func, char* name, pp_value value)
 	return v;
 }
 
-pp_func env_add_function(char* name, pp_type ret_type, pp_var args)
+pp_func env_add_function(char* name,pp_type ret_type, pp_var args)
 {
 	pp_func f = (pp_func) malloc(sizeof(struct s_pp_func));
 	f->name = strdup(name);
@@ -260,7 +334,7 @@ int env_get_args_number(pp_func f)
 		v = v->next;
 	}
 	
-	return result - 1;
+	return result;
 }
 
 pp_var exe_get_variable(char* name, pp_context context)
@@ -682,18 +756,21 @@ void env_link_arguments(syna_node root, pp_context current_context, pp_context c
 			break;
 		
 		default:
+			is_af = 1;
 			syna_execute(root, current_context);
+			is_af = 0;
 			//context->current_context->value = root->value;
 			//context->current_context->type = root->value->type;
-			pp_var n = exe_add_variable(f->args_current->name, context, root->value->type);
-			n->scope = LOCAL;
+			//pp_var n = exe_add_variable(f->args_current->name, context, root->value->type);
+			//n->scope = LOCAL;
 			//pp_var n = (pp_var) malloc(sizeof(struct s_pp_var));
 			//pp_value vv = (pp_value) malloc(sizeof(struct s_pp_value));
 			//vv->value = root->value->value;
 			//vv->type = root->value->type;
-			n->value->value = root->value->value;
-			n->value->members = root->value->members;
-			n->value->members_count = root->value->members_count;
+			//n->value->value = root->value->value;
+			//n->value->members = root->value->members;
+			//n->value->members_count = root->value->members_count;
+			c3a_add_line(NULL, "Param", f->args_current->name, root->string, NULL);
 			f->args_current = f->args_current->next;
 		break;
 	}
@@ -795,10 +872,10 @@ int err_check_arguments(syna_node arg_node, pp_context context, pp_func f, int r
 			return b1;
 		break;
 		default:
-			if (check)
-				syna_check(arg_node, context);
-			else
-				syna_execute(arg_node, context);
+			//if (check)
+			//	syna_check(arg_node, context);
+			//else
+			//	syna_execute(arg_node, context);
 			
 			err_check_single_argument(arg_node, f, rank, rank_max);
 		break;
@@ -862,8 +939,12 @@ void syna_execute(syna_node root, pp_context context)
 		case NROOT:
 			//var_declaration = 1;
 			syna_execute(root->childs[0], context);
-			syna_execute(root->childs[2], context);
+			fun = 1;
+			lcl = 1;
 			syna_execute(root->childs[1], context);
+			lcl = 0;
+			fun = 0;
+			syna_execute(root->childs[2], context);
 			//var_declaration = 0;
 			//pp_context nc = exe_copy_context(context);
 			break;
@@ -880,9 +961,9 @@ void syna_execute(syna_node root, pp_context context)
 			//pp_var __b__ = exe_add_variable("__b__", context, syna_create_type(INT, NULL));
 			//__b__->value = env_create_value(syna_create_type(INT, NULL), root->childs[1]->value->value, NULL);
 			//__b__->value->value = root->childs[1]->value->value;
-			if (	err_check_type(root->childs[0]->value->type, syna_create_type(INT, NULL))
-				&&	err_check_type(root->childs[1]->value->type, syna_create_type(INT, NULL)))
-				{
+			//if (	err_check_type(root->childs[0]->value->type, syna_create_type(INT, NULL))
+			//	&&	err_check_type(root->childs[1]->value->type, syna_create_type(INT, NULL)))
+			//	{
 					
 					root->string = c3a_new_value(INT);
 					switch (root->opi) {
@@ -917,13 +998,14 @@ void syna_execute(syna_node root, pp_context context)
 					
 					pp_value v = env_create_value(syna_create_type(INT, NULL), c, NULL);
 					root->value = v;*/
-				}
+				//}
 			}
 		break;
 		
 		case NOPB:
 {
 			//Check if both values are of type Boolean
+			is_af = 1;
 			if (root->opb != NOT)
 			{
 				syna_execute(root->childs[0], context);
@@ -973,29 +1055,43 @@ void syna_execute(syna_node root, pp_context context)
 						break;
 						
 					case NOT:
-						c3a_add_line(NULL, "Not", root->childs[0]->string, NULL, root->string);
+						c3a_add_line(NULL, "Not", root->childs[1]->string, NULL, root->string);
 						break;
 					
-					case LT:
+					case LT:{
+					//char* ss = (char*) malloc(sizeof(char) * C3A_ETQ_LENGTH); 
+					//ss = c3a_new_value(BOOL);
 						c3a_add_line(NULL, "Lt", root->childs[0]->string, root->childs[1]->string, root->string);
+						//c3a_add_line(NULL, "Not", root->string, NULL, ss);
+						//root->string = ss;
+					}
 						break;
 						
 					case EQ:
-						c = (a == b ? 1 : 0);	//???????????????????????
+					{
+						char* s = (char*) malloc(sizeof(char) * C3A_ETQ_LENGTH); 
+						s = c3a_new_value(BOOL);
+						c3a_add_line(NULL, "Mo", root->childs[0]->string, root->childs[1]->string, root->string);
+						char* ss = (char*) malloc(sizeof(char) * C3A_ETQ_LENGTH); 
+						
+						ss = c3a_new_value(BOOL);
+						c3a_add_line(NULL, "Not", root->string, NULL, ss);
+						root->string = ss;
+					}
 						break;
 			//	}
 				
 				//pp_value v = env_create_value(syna_create_type(BOOL, NULL), c, NULL);
 				//root->value = v;
-			}else{
-				err_display("Cannot evalue expression (are members correctly initialized ?)");
 				//root->value == NULL;
 			}
 		}
 		break;
 		
 		case NPBA:
-		   //syna_execute(root->childs[0], context);
+			syna_execute(root->childs[0], context);
+			root->string = c3a_new_value(INT);
+			c3a_add_line(NULL, "Af", root->string, root->childs[0]->string, NULL); 
 		   //root->value = root->childs[0]->value;
 		break;
 		
@@ -1021,18 +1117,49 @@ void syna_execute(syna_node root, pp_context context)
 			//root->value = v->value;
 			//fprintf(stderr, "okvar : %s : %d\n", root->string, root->value->value);
 			char* s = strdup(root->string);
-			root->string = c3a_new_value(INT);
-			c3a_add_line(NULL, "Af", root->string, s, NULL);
+			root->variable = (pp_var) malloc(sizeof(struct s_pp_var));
+			root->variable->name = s;
+			if (!lcl)
+			{
+				root->string = c3a_new_value(INT);
+				if (is_af)
+					c3a_add_line(NULL, "Af", root->string, s, NULL);
+			}
+				
 			}
 		break;
 		
 		case NARRAY:	//TODO: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-			syna_execute(root->childs[1], context);//index
+			{
+				syna_execute(root->childs[1], context);//index
+				if (root->childs[0]->type == NARRAY)
+				{
+					//is_af = 1;
+					dim++;
+					syna_execute(root->childs[0], context);//array-side
+					dim--;
+					//c3a_a a = a_get(root->childs[0]->string);
+					//root->string = a->members[root->childs[1]->value->value]->name;
+				}
+				else
+					root->string = root->childs[0]->string;
+				
+				
 			//err_check_type(root->childs[1]->value->type, syna_create_type(INT, NULL));
-			syna_execute(root->childs[0], context);//array-side
 			
-			root->string = c3a_new_value(ARRAY);
-			c3a_add_line(NULL, "Ind", root->childs[0]->string, root->childs[1]->string, root->string);
+			
+			if (dim == 0 && root->childs[0]->type == NARRAY)
+				root->string = c3a_new_value(INT);
+			else if (dim > 0 || root->childs[0]->type != NARRAY)
+				root->string = c3a_new_value(ARRAY);
+
+			//char* s = (char*) malloc(sizeof(char) * C3A_ETQ_LENGTH);
+			//sprintf(s, "%d", root->childs[1]->string);
+			//if (is_af || root->childs[0]->type != NARRAY || dim > 0)
+				c3a_add_line(NULL, "Ind", root->childs[0]->string, root->childs[1]->string, root->string);
+			//}else{
+			//	c3a_add_line(NULL, )
+			}
 			//root->value->type = syna_create_type(ARRAY, root->childs[0]->value->type);
 			//root->value = env_create_value(root->childs[0]->value->type->next, 0, NULL);
 			//root->value->type = root->childs[0]->value->type->next;
@@ -1054,9 +1181,31 @@ void syna_execute(syna_node root, pp_context context)
 		break;
 		
 		case NNA:
+			{
+			//syna_execute(root->childs[1], context); //Size
+			char* s = (char*) malloc(sizeof(char) * C3A_ETQ_LENGTH);
+			char* ss = (char*) malloc(sizeof(char) * C3A_ETQ_LENGTH);
+			char* n = (char*) malloc(sizeof(char) * C3A_ETQ_LENGTH);
+			if (root->string != NULL)
+				sprintf(s, "CT%s", root->string);
+			else
+			{
+				s = c3a_new_value(ARRAY);
+				sprintf(ss, "CT%s", s);
+			}
+				
+			sprintf(n, "%d", root->childs[1]->value->value);
+			
+			if (root->string != NULL)
+				c3a_add_line(NULL, "Afc", n, NULL, s);
+			else
+				c3a_add_line(NULL, "Afc", n, NULL, ss);
+			
+			root->string = s;
+		}
+		
 			//Check if index is of type integer
 			//syna_execute(root->childs[0], context); //Type
-			//syna_execute(root->childs[1], context); //Size
 			//??????????????????????????????????????????????????????????????????
 			//if (err_check_type(root->childs[1]->value->type, syna_create_type(INT, NULL)))
 			//{
@@ -1071,20 +1220,25 @@ void syna_execute(syna_node root, pp_context context)
 		break;
 		
 		case NITE:
+		{
 			//Check if condition is of type Boolean
 			char* e = c3a_new_value(GOTO);
 			char* g = c3a_new_value(GOTO);
+			is_af = 1;
 			syna_execute(root->childs[0], context);
+			is_af = 0;
 			//err_check_type(root->childs[0]->value->type, syna_create_type(BOOL, NULL));
 			c3a_add_line(NULL, "Jz", root->childs[0]->string, NULL, e);
 			syna_execute(root->childs[1], context);
 			c3a_add_line(NULL, "Jp", NULL, NULL, g);
 			c3a_add_line(e, "Sk", NULL, NULL, NULL);
 			syna_execute(root->childs[2], context);
-			c3a_add_line(q, "Sk", NULL, NULL, NULL);
+			c3a_add_line(g, "Sk", NULL, NULL, NULL);
+		}
 		break;
 		
 		case NWD:
+		{
 			//Check if condition is of type Boolean
 			char* w = c3a_new_value(GOTO);
 			char* e = c3a_new_value(GOTO);
@@ -1092,16 +1246,18 @@ void syna_execute(syna_node root, pp_context context)
 			syna_execute(root->childs[0], context);
 			//err_check_type(root->childs[0]->value->type, syna_create_type(BOOL, NULL))
 			c3a_add_line(NULL, "Jz", root->childs[0]->string, NULL, e);
-			syna_check(root->childs[1], context);
+			syna_execute(root->childs[1], context);
 			c3a_add_line(NULL, "Jp", NULL, NULL, w);
 			c3a_add_line(e, "Sk", NULL, NULL, NULL);
+		}
 		break;
 		
-		case NAAF:	//TODO: do you like my car ?
+		case NAAF:	
 			//Check if value and destination are of same type
 			//???????????????????????????????????????????????????????????
-			//syna_execute(root->childs[0], context);
-			//syna_execute(root->childs[1], context);
+			syna_execute(root->childs[0], context);
+			syna_execute(root->childs[1], context);
+			
 			//if (err_check_type(root->childs[1]->value->type, root->childs[0]->value->type))
 			//{
 			//	if (root->childs[1]->value->type->type != ARRAY)
@@ -1112,17 +1268,48 @@ void syna_execute(syna_node root, pp_context context)
 			//		root->childs[0]->value->members_count = root->childs[1]->value->members_count;
 			//	}
 			//}
+			//root->string = c3a_new_value(ARRAY);
+			c3a_add_line(NULL, "AfInd", root->childs[0]->string, root->childs[0]->childs[1]->string, root->childs[1]->string);
+			/*if (root->childs[1]->type == NNA)
+			{
+				//TODO : 2d+ arrays
+				c3a_a a = a_get(root->childs[0]->string);
+				a->members[root->childs[0]->childs[1]->value->value] = a_get(root->childs[1]->string);
+			}*/
+			
 		break;
 		
 		case NVAF:
 			//Check if value and destination are of same type
+			if (root->childs[1]->type == NNA)
+			{
+				root->childs[1]->string = root->childs[0]->string;
+				//c3a_add_line(NULL, "Afc", root->child)
+			}
+			is_af = 1;
 			syna_execute(root->childs[1], context);
+			is_af = 0;
 			syna_execute(root->childs[0], context);
-			//if (err_check_type(root->childs[1]->value->type, root->childs[0]->value->type))
+			if (root->childs[1]->type != NNA)
+			{
+				
+				//if (root->childs[1]->variable == NULL)
+					c3a_add_line(NULL, "Af", root->childs[0]->variable->name, root->childs[1]->string, NULL);
+				//else
+					//c3a_add_line(NULL, "Af", root->childs[0]->variable->name, root->childs[1]->variable->name, NULL);
+			}else{
+				//c3a_a a = a_get(root->childs[0]->string);
+				//a->size = root->childs[1]->childs[1]->value->value;
+				//a->members = (c3a_a*) malloc(sizeof(c3a_a) * a->size);
+				
+			}
+			
+			
+			//err_check_type(root->childs[1]->value->type, root->childs[0]->value->type))
 			//{
-				root->childs[0]->variable->value->value = root->childs[1]->value->value;
-				root->childs[0]->variable->value->members = root->childs[1]->value->members;
-				root->childs[0]->variable->value->members_count = root->childs[1]->value->members_count;
+				//root->childs[0]->variable->value->value = root->childs[1]->value->value;
+				//root->childs[0]->variable->value->members = root->childs[1]->value->members;
+				//root->childs[0]->variable->value->members_count = root->childs[1]->value->members_count;
 				//env_display(context);
 				//root->childs[0]->variable->value = root->childs[1]->value;
 			//}
@@ -1130,11 +1317,10 @@ void syna_execute(syna_node root, pp_context context)
 			break;
 		
 		case NSKIP:
-			//eh	
+			c3a_add_line(NULL, "Sk", NULL, NULL, NULL);
 			break;
 		
 		case NVDEF:
-			//root->childs[0]->variable = env_get_variable(root->childs[0]->string, var_declaration, context);
 			//root->childs[0]->variable = exe_add_variable(root->childs[0]->string, context, root->value->type);
 			//if (root->childs[1] != NULL)
 			//	syna_execute(root->childs[1], context);
@@ -1150,251 +1336,75 @@ void syna_execute(syna_node root, pp_context context)
 				root->value->type->next = root->childs[0]->value->type;
 			}*/
 		break;
-		
+		//HELP-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 		case NPDEF:
-			root->function = env_add_function(root->string, syna_create_type(NONE, NULL), root->variable);
+		case NFDEF:
+		{
+			char* s = (char*) malloc(sizeof(char) * C3A_ETQ_LENGTH);
+			sprintf(s, "ET%s", root->string);
+			c3a_add_line(s, "Sk", NULL, NULL, NULL);
+			root->function = env_add_function(root->string, NULL, root->variable);
+			//root->childs[0]->variable = env_get_variable(root->childs[0]->string, var_declaration, context);
 			//env_change_context(root->string, 0);
-			syna_link_args_to_func(root->function, root->childs[0]);	//define args
+			syna_link_args_to_func(root->function, root->childs[0]);
+		}
 		break;
 		
-		case NFDEF:
-			syna_execute(root->childs[1], context); //define ret type
-			root->value = root->childs[1]->value;
-			root->function = env_add_function(root->string, root->value->type, root->variable);
-			//env_change_context(root->string, 0);
-			syna_link_args_to_func(root->function, root->childs[0]);	//define args
-		break;
-	
 		case NPBODY:
-		var_declaration = 1;
+		case NFBODY:
+		//var_declaration = 1;
 		syna_execute(root->childs[0], context); //Procedure declaration
 		//Context already changed
-		syna_execute(root->childs[1], context); //Add local variables
+		//syna_execute(root->childs[1], context); //Add local variables
 		//When called, must execute root->childs[2]
-		var_declaration = 0;
+		//var_declaration = 0;
+		
 		root->childs[0]->function->body = root->childs[2];
 		
-		//syna_check(root->childs[2], context);
+		syna_execute(root->childs[2], context);
+		c3a_add_line(NULL, "Ret", NULL, NULL, NULL);
 		//env_change_context("main_program", 0);
-		break;
-		
-		case NFBODY:
-		var_declaration = 1;
-		syna_execute(root->childs[0], context); //Function declaration
-		//Context already changed
-		syna_execute(root->childs[1], context); //Add local variables
-		//When called, must execute root->childs[2]
-		var_declaration = 0;
-		root->childs[0]->function->body = root->childs[2];
-		context->tmp_context = root->childs[0]->function->args;
-		pp_var ret = exe_add_variable(root->childs[0]->function->name, context, root->childs[0]->function->ret_type);
-		ret->scope = LOCAL;
-		//env_add_variable(root->childs[0]->string, root->childs[0]->value->type); // Add return value
-		syna_check(root->childs[2], context);
-		ret->func = 1;
 		break;
 		
 		case NFPCALL:
 		{	//NOTE: Somehow the syna_check is crashing, don't , contextknow why, but this might be the last step for ppc3ac
 			//syna_execute(root->childs[0], context);
 			pp_func f = env_get_function(root->string, 0);
-				root->value = env_create_value(f->ret_type, 0, NULL);
-				if (!err_check_arguments(root->childs[0], context, f, 0, env_get_args_number(f), 0))
+			
+				//root->value = env_create_value(f->ret_type, 0, NULL);
+				/*if (!err_check_arguments(root->childs[0], context, f, 0, env_get_args_number(f), 0))
 				{
 					char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
 					sprintf(s, "Too few arguments for %s", f->name);
 					err_display(s);
-				}else{
+				}else{*/
 						
 					//ina_execute(f, root->childs[0]);
 					//should syna_execute(with new args)
-					pp_context new_context = exe_copy_context(context);
+					//pp_context new_context = exe_copy_context(context);
+					int n = env_get_args_number(f);
+					char* ns = (char*) malloc(sizeof(char) * C3A_ETQ_LENGTH);
 					f->args_current = f->args;
-					env_link_arguments(root->childs[0], context, new_context, f);
-					pp_var ret = exe_add_variable(f->name, new_context, f->ret_type);
-					ret->scope = LOCAL;
+					env_link_arguments(root->childs[0], NULL,NULL, f);
+					char* s = (char*) malloc(sizeof(char) * C3A_ETQ_LENGTH);
+					sprintf(s, "ET%s", root->string);
+					sprintf(ns, "%d", n);
+					c3a_add_line(NULL, "Call", s, ns, NULL);
+					//pp_var ret = exe_add_variable(f->name, new_context, f->ret_type);
+					//ret->scope = LOCAL;
 					//fprintf(stdout, "us before exec\n");
 					//env_display(new_context);
-					syna_execute(f->body, new_context);
+					//syna_execute(f->body, new_context);
 					//fprintf(stdout, "us after exec\n");
 					//env_display(context);
 					//root->value = env_create_value(f->ret_type, vvv->value->value, NULL);
-					root->value->value = ret->value->value;
+					//root->value->value = ret->value->value;
 					////env_change_context("main_program", 0);
-				}
+				//}
 		}
 		break;
 	}
 }
-
-void syna_check(syna_node root, pp_context context)
-{
-	line_position = root->line_position;
-	switch (root->type) {
-		case NEMPTY:
-			//eh
-			break;
-		
-		case NROOT:
-			var_declaration = 1;
-			syna_check(root->childs[0], context);
-			var_declaration = 0;
-			syna_check(root->childs[1], context);
-			syna_check(root->childs[2], context);
-			break;
-		
-		case NOPI:
-			//Check if both values are of type Integer 
-			syna_check(root->childs[0], context);
-			syna_check(root->childs[1], context);
-			err_check_type(root->childs[0]->value->type, syna_create_type(INT, NULL));
-			err_check_type(root->childs[1]->value->type, syna_create_type(INT, NULL));
-		break;
-		
-		case NOPB:
-			//Check if both values are of type Boolean
-			if (root->opb != NOT)
-				syna_check(root->childs[0], context);
-			
-			syna_check(root->childs[1], context);
-			int err_status = 1;
-			switch (root->opb) {
-				case OR:
-				case AND:
-					err_status = err_check_type(root->childs[0]->value->type, syna_create_type(BOOL, NULL));
-				case NOT:
-					err_status = err_check_type(root->childs[1]->value->type, syna_create_type(BOOL, NULL));			
-				break;
-				
-				case LT:
-				case EQ:
-					err_status = err_check_type(root->childs[0]->value->type, syna_create_type(INT, NULL))
-								* err_check_type(root->childs[1]->value->type, syna_create_type(INT, NULL));
-				break;			
-			}
-		break;
-		
-		case NPBA:
-		   syna_check(root->childs[0], context);
-		   //root->value->type = root->childs[0]->value->type;
-		  // root->value = env_create_value(root->childs[0]->value->type, 0, NULL);
-		   root->value = root->childs[0]->value;
-		break;
-		
-		case NVALUE:
-			//Check type ?
-		break;
-		
-		case NVAR:
-			{
-			//Check type
-			pp_var v = exe_get_variable(root->string, context);
-			if (v->func)
-				err_display("Symbol is a function but is used as a variable");
-			root->value = env_create_value(v->value->type, v->value->value, NULL);	
-			}
-		break;
-		
-		case NARRAY:	//TODO: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-			syna_check(root->childs[1], context);//index
-			err_check_type(root->childs[1]->value->type, syna_create_type(INT, NULL));
-			syna_check(root->childs[0], context);//array-side
-			//root->value->type = syna_create_type(ARRAY, root->childs[0]->value->type);
-			root->value = env_create_value(root->childs[0]->value->type->next, 0, NULL);
-			//root->value->type = root->childs[0]->value->type->next;
-			//fprintf(stderr, "%d\n", root->childs[0]->value->type->type);
-		break;
-		
-		case NNA:
-			//Check if index is of type integer
-			syna_check(root->childs[0], context);
-			syna_check(root->childs[1], context);
-			err_check_type(root->childs[1]->value->type, syna_create_type(INT, NULL));
-			root->value = env_create_value(syna_create_type(ARRAY, root->childs[0]->value->type), 0, NULL);
-		break;
-		
-		case NBRANCH:
-			syna_check(root->childs[0], context);
-			syna_check(root->childs[1], context);
-		break;
-		
-		case NITE:
-			//Check if condition is of type Boolean
-			syna_check(root->childs[0], context);
-			err_check_type(root->childs[0]->value->type, syna_create_type(BOOL, NULL));
-			syna_check(root->childs[1], context);
-			syna_check(root->childs[2], context);
-		break;
-		
-		case NWD:
-			//Check if condition is of type Boolean
-			syna_check(root->childs[0], context);
-			syna_check(root->childs[1], context);
-			err_check_type(root->childs[0]->value->type, syna_create_type(BOOL, NULL));
-		break;
-		
-		case NAAF:	//TODO: do you like my car ?
-			//Check if value and destination are of same type
-			syna_check(root->childs[0], context);
-			syna_check(root->childs[1], context);
-			err_check_type(root->childs[1]->value->type, root->childs[0]->value->type);
-		break;
-		
-		case NNVAR:
-			//Check if value and destination are of same type
-
-		break;
-		
-		case NVAF:
-			//Check if value and destination are of same type
-			syna_check(root->childs[1], context);
-			syna_check(root->childs[0], context);
-			err_check_type(root->childs[1]->value->type, root->childs[0]->value->type);
-			break;
-		
-		case NSKIP:
-			//eh	
-			break;
-		
-		case NEXPR:
-			
-		break;
-		
-		case NVDEF:
-			root->childs[0]->variable = env_get_variable(root->childs[0]->string, var_declaration, NULL);
-			if (root->childs[1] != NULL)
-				syna_check(root->childs[1], context);
-				
-			root->childs[0]->variable->type = root->value->type;
-			break;
-		
-		case NTYPE: 
-			if (root->childs[0] != NULL)
-			{
-				syna_check(root->childs[0], context);
-				root->value->type->next = root->childs[0]->value->type;
-			}
-		break;
-		
-		case NFPCALL:
-		{
-			syna_check(root->childs[0], context);
-			pp_func f = env_get_function(root->string, 0);
-			if (f != NULL)
-			{
-				root->value = env_create_value(f->ret_type, 0, NULL);
-				if (!err_check_arguments(root->childs[0], context, f, 0, env_get_args_number(f), 1))
-				{
-					char* s = (char*) malloc(sizeof(char) * ERR_BUFFER_SIZE);
-					sprintf(s, "Too few arguments for %s", f->name);
-					err_display(s);
-				}
-			}else{
-				root->value->type = syna_create_type(NONE, NULL);
-			}
-		}
-		break;
-	}
 }
 
 /*void ina_execute(pp_func f, syna_node args)
@@ -1522,5 +1532,17 @@ void exe_stop()
 void env_report()
 {
 	//env_change_context("main_program", 0);
-	env_display(main_context);
+	//env_display(main_context);
+	c3a_add_line(NULL, "St", NULL, NULL, NULL);
+	while (c3a_root != NULL)
+	{
+		fprintf(stdout, "%s\t:%s\t:%s\t:%s\t:%s\t\n", c3a_root->etq, c3a_root->op, c3a_root->arg1, c3a_root->arg2, c3a_root->dst);
+		c3a_root = c3a_root->next;
+	}
+	
+	while (c3a_f != NULL)
+	{
+		fprintf(stdout, "%s\t:%s\t:%s\t:%s\t:%s\t\n", c3a_f->etq, c3a_f->op, c3a_f->arg1, c3a_f->arg2, c3a_f->dst);
+		c3a_f = c3a_f->next;
+	}
 }

@@ -88,6 +88,15 @@ struct s_pp_context{
 
 typedef struct s_pp_context* pp_context;
 
+struct s_c3a_a{
+	struct s_c3a_a** members;
+	int size;
+	char* name;
+	struct s_c3a_a* next;
+};
+
+typedef struct s_c3a_a* c3a_a;
+
 void incr_line();
 void env_initialize();
 pp_var env_add_variable(char* name, pp_type type);
@@ -127,7 +136,6 @@ syna_node syna_newarray_node(syna_node type, syna_node expr);
 
 void syna_execute(syna_node root, pp_context context);
 void ina_execute(pp_func f, syna_node args);
-void syna_check(syna_node root, pp_context context);
 void err_display();
 void err_report();
 void env_report();
