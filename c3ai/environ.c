@@ -48,8 +48,9 @@ int eval(int op, int arg1, int arg2)
       return(arg1 - arg2);
     case Mu:
       return(arg1 * arg2);
-    case Not:
-      return (arg1+1)%2;
+    case Not:{
+      return !arg1;
+    }
     case And:
       return arg1 && arg2;
     case Or:
@@ -96,7 +97,7 @@ int ecrire_env(ENV rho)
       return(EXIT_SUCCESS);}
   else
     {
-        if(rho->ID != NULL && strncmp(rho->ID,"CT",2) !=0 && strncmp(rho->ID,"ET",2) != 0 && rho->AR == NULL){
+        if(rho->ID != NULL  && strncmp(rho->ID,"CT",2) !=0 &&  strncmp(rho->ID,"ET",2) != 0 && rho->AR == NULL){
            printf("variable %s valeur %d \n",rho->ID ? rho->ID : "(null)",rho->VAL);
         }
         if(rho->ID != NULL && strncmp(rho->ID,"CT",2) !=0 && strncmp(rho->ID,"ET",2) != 0 && rho->AR != NULL){
