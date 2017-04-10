@@ -93,6 +93,7 @@ int main(int argc, char *argv[]) {
     ENV env = Envalloc();
     ENV param = Envalloc();
     ENV loc = Envalloc();
+    ENV tloc = Envalloc();
     char* current = NULL;
     int scope = 0;
     QUAD elem;
@@ -168,6 +169,7 @@ int main(int argc, char *argv[]) {
             elem = elem->SUIV;
         } else if (elem->OP == Call){
           Push(&S,loc);
+          tloc = loc;
           scope++;
           // ca1
           QUAD listStart = list.debut;
@@ -181,6 +183,7 @@ int main(int argc, char *argv[]) {
             removeLastFromEnv(param);
           //ca3
           initenv(&loc, &(elem->ARG1[2]));
+          initenv((scope-1>0)?&(tloc):&env, &(elem->ARG1[2]));
           Push(&S,elem->SUIV);
           param = NULL;
           //ca4
@@ -196,6 +199,7 @@ int main(int argc, char *argv[]) {
           Pop(&S);
           printf("***appel %d à %.16s --- variables locales\n", scope+1,&current[2]);
           ecrire_env(loc);
+          ENV retval = rech(&current[2],loc);
           if (scope == 0){
             loc = Envalloc();
             param = Envalloc();
@@ -205,6 +209,8 @@ int main(int argc, char *argv[]) {
             loc = (ENV)Top(&S);
             Pop(&S);
           }
+          initenv((scope>0)?&loc:&env,&current[2]);
+          affect((scope>0)?loc:env,&current[2],retval->VAL);
           elem = elem->SUIV;
         } else if (elem->OP == Not){
           if (scope == 0){
