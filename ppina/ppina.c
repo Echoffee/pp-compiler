@@ -18,6 +18,25 @@ pp_var current_arg = NULL;
 
 pp_context main_context = NULL;
 
+pp_stack base = NULL;
+
+void stack_push(pp_value value)
+{
+	pp_stack s = (pp_stack) malloc(sizeof(struct s_pp_stack));
+	s->value = value;
+	
+	s->prev = &(*base);
+	base = s;
+}
+
+pp_value stack_pop()
+{
+	pp_stack a = &(*base);
+	base = a->prev;
+	
+	return a->value;
+}
+
 void incr_line()
 {
 	line_position++;
@@ -806,7 +825,7 @@ void syna_execute(syna_node root, pp_context context)
 			var_declaration = 0;
 			pp_context nc = exe_copy_context(context);
 			syna_execute(root->childs[1], nc);
-			fprintf(stderr, "exec\n");
+			//fprintf(stderr, "exec\n");
 			syna_execute(root->childs[2], nc);
 			break;
 		
@@ -815,18 +834,24 @@ void syna_execute(syna_node root, pp_context context)
 	
 			//Check if both values are of type Integer 
 			syna_execute(root->childs[0], context);
-			pp_var __a__ = exe_add_variable("__a__", context, syna_create_type(INT, NULL));
+			//pp_var __a__ = exe_add_variable("__a__", context, syna_create_type(INT, NULL));
+			pp_var __a__ = (pp_var) malloc(sizeof(struct s_pp_var));
 			__a__->value = env_create_value(syna_create_type(INT, NULL), root->childs[0]->value->value, NULL);
 			__a__->value->value = root->childs[0]->value->value;
+			stack_push(__a__->value);
 			syna_execute(root->childs[1], context);
-			pp_var __b__ = exe_add_variable("__b__", context, syna_create_type(INT, NULL));
+			//pp_var __b__ = exe_add_variable("__b__", context, syna_create_type(INT, NULL));
+			pp_var __b__ = (pp_var) malloc(sizeof(struct s_pp_var));
 			__b__->value = env_create_value(syna_create_type(INT, NULL), root->childs[1]->value->value, NULL);
 			__b__->value->value = root->childs[1]->value->value;
+			stack_push(__b__->value);
 			if (	err_check_type(root->childs[0]->value->type, syna_create_type(INT, NULL))
-				&&	err_check_type(root->childs[1]->value->type, syna_create_type(INT, NULL)))
+			&&	err_check_type(root->childs[1]->value->type, syna_create_type(INT, NULL)))
 				{
-					int a = exe_get_variable("__a__", context)->value->value;
-					int b = exe_get_variable("__b__", context)->value->value;
+					//int a = exe_get_variable("__a__", context)->value->value;
+					//int b = exe_get_variable("__b__", context)->value->value;
+					int b = stack_pop()->value;
+					int a = stack_pop()->value;
 					int c;
 					switch (root->opi) {
 						case PL:
@@ -854,15 +879,19 @@ void syna_execute(syna_node root, pp_context context)
 			if (root->opb != NOT)
 			{
 				syna_execute(root->childs[0], context);
-				pp_var __a__ = exe_add_variable("__a__", context, syna_create_type(INT, NULL));
+				//pp_var __a__ = exe_add_variable("__a__", context, syna_create_type(INT, NULL));
+				pp_var __a__ = (pp_var) malloc(sizeof(struct s_pp_var));
 				__a__->value = env_create_value(syna_create_type(INT, NULL), root->childs[0]->value->value, NULL);
 				__a__->value->value = root->childs[0]->value->value;
+				stack_push(__a__->value);
 			}
 			
 			syna_execute(root->childs[1], context);
-			pp_var __b__ = exe_add_variable("__b__", context, syna_create_type(INT, NULL));
+			//pp_var __b__ = exe_add_variable("__b__", context, syna_create_type(INT, NULL));
+			pp_var __b__ = (pp_var) malloc(sizeof(struct s_pp_var));
 			__b__->value = env_create_value(syna_create_type(INT, NULL), root->childs[1]->value->value, NULL);
 			__b__->value->value = root->childs[1]->value->value;
+			stack_push(__b__->value);
 
 			int err_status = 1;
 			err_status = (root->childs[1]->value != NULL ? 1 : 0);
@@ -883,10 +912,12 @@ void syna_execute(syna_node root, pp_context context)
 			
 			if (err_status)
 			{
-				int b = exe_get_variable("__b__", context)->value->value;
+				//int b = exe_get_variable("__b__", context)->value->value;
+				int b = stack_pop()->value;
 				int a = 0;
 				if (root->opb != NOT)
-					a = exe_get_variable("__a__", context)->value->value;
+					a = stack_pop()->value;
+					//a = exe_get_variable("__a__", context)->value->value;
 				
 				int c;
 				switch (root->opb) {		//TODO: Optimization

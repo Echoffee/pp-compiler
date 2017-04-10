@@ -77,6 +77,12 @@ struct s_pp_context{
 
 typedef struct s_pp_context* pp_context;
 
+struct s_pp_stack{
+	pp_value value;
+	struct s_pp_stack* prev;
+};
+typedef struct s_pp_stack* pp_stack;
+
 void incr_line();
 void env_initialize();
 pp_var env_add_variable(char* name, pp_type type);
