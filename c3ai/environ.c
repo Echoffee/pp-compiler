@@ -48,14 +48,16 @@ int eval(int op, int arg1, int arg2)
       return(arg1 - arg2);
     case Mu:
       return(arg1 * arg2);
-    case Not:
-      return (arg1+1)%2;
+    case Not:{
+      return !arg1;
+    }
     case And:
       return arg1 && arg2;
     case Or:
       return arg1 || arg2;
-    case Lt:
+    case Lt:{
       return (arg1 < arg2);
+    }
     default:
       return(0);
     }
@@ -95,7 +97,7 @@ int ecrire_env(ENV rho)
       return(EXIT_SUCCESS);}
   else
     {
-        if(rho->ID != NULL && strncmp(rho->ID,"CT",2) !=0 && strncmp(rho->ID,"ET",2) != 0 && rho->AR == NULL){
+        if(rho->ID != NULL  && strncmp(rho->ID,"CT",2) !=0 &&  strncmp(rho->ID,"ET",2) != 0 && rho->AR == NULL){
            printf("variable %s valeur %d \n",rho->ID ? rho->ID : "(null)",rho->VAL);
         }
         if(rho->ID != NULL && strncmp(rho->ID,"CT",2) !=0 && strncmp(rho->ID,"ET",2) != 0 && rho->AR != NULL){
@@ -137,7 +139,7 @@ array* new_ar(int size){
 int ar_read(array* arr, int i)
 {
   if(i >= arr->size){
-    fprintf(stderr,"Index is out of bounds, value set to 0\n");
+    fprintf(stderr,"Index %d is out of bounds, value set to 0\n",i);
     return 0;
   }
   else{
@@ -148,7 +150,7 @@ int ar_read(array* arr, int i)
 void ar_write(array* arr, int i, int val)
 {
   if (i >= arr->size)
-    fprintf(stderr,"Index is out of bounds\n");
+    fprintf(stderr,"Index %d is out of bounds\n",i);
   else
     arr->values[i] = val;
 }

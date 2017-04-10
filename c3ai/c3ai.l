@@ -93,6 +93,7 @@ int main(int argc, char *argv[]) {
     ENV env = Envalloc();
     ENV param = Envalloc();
     ENV loc = Envalloc();
+    ENV tloc = Envalloc();
     char* current = NULL;
     int scope = 0;
     QUAD elem;
@@ -120,13 +121,10 @@ int main(int argc, char *argv[]) {
         }
         /***Af***/
         else if (elem->OP == Af) {
-          if (scope == 0) {
-              initenv(&env, elem->ARG1);
-              initenv(&env, elem->ARG2);
-            }else{
-              initenv(&loc, elem->ARG1);
-              initenv(&loc, elem->ARG2);
-            }
+            ENV a1 = rech(elem->ARG1,loc);
+            ENV a2 = rech(elem->ARG2,loc);
+            initenv((a1)?&loc:&env, elem->ARG1);
+            initenv((a2)?&loc:&env, elem->ARG2);
             affect((scope > 0 && rech(elem->ARG1,loc) != NULL)?loc:env, elem->ARG1, valch((scope > 0 && rech(elem->ARG2,loc) != NULL)?loc:env, elem->ARG2));
             elem = elem->SUIV;
         }
@@ -168,6 +166,7 @@ int main(int argc, char *argv[]) {
             elem = elem->SUIV;
         } else if (elem->OP == Call){
           Push(&S,loc);
+          tloc = loc;
           scope++;
           // ca1
           QUAD listStart = list.debut;
@@ -181,8 +180,9 @@ int main(int argc, char *argv[]) {
             removeLastFromEnv(param);
           //ca3
           initenv(&loc, &(elem->ARG1[2]));
+          initenv((scope-1>0)?&(tloc):&env, &(elem->ARG1[2]));
           Push(&S,elem->SUIV);
-          param = NULL;
+          param = Envalloc();
           //ca4
           while (strcmp(listStart->ETIQ,dest) != 0){
               listStart = listStart->SUIV;
@@ -196,6 +196,7 @@ int main(int argc, char *argv[]) {
           Pop(&S);
           printf("***appel %d à %.16s --- variables locales\n", scope+1,&current[2]);
           ecrire_env(loc);
+          ENV retval = rech(&current[2],loc);
           if (scope == 0){
             loc = Envalloc();
             param = Envalloc();
@@ -205,15 +206,14 @@ int main(int argc, char *argv[]) {
             loc = (ENV)Top(&S);
             Pop(&S);
           }
+          initenv((scope>0)?&loc:&env,&current[2]);
+          affect((scope>0)?loc:env,&current[2],retval->VAL);
           elem = elem->SUIV;
         } else if (elem->OP == Not){
-          if (scope == 0){
-            initenv(&env,elem->RES);
-            initenv(&env, elem->ARG1);
-          }else{
-            initenv(&loc,elem->RES);
-            initenv(&loc, elem->ARG1);
-          }
+          ENV re = rech(elem->RES,loc);
+          ENV a1 = rech(elem->ARG1,loc);
+          initenv((re)?&loc:&env,elem->RES);
+          initenv((a1)?&loc:&env,elem->ARG1);
           int res = eval(elem->OP,valch((scope > 0 && rech(elem->ARG1,loc)!=NULL)?loc:env,elem->ARG1),valch((scope > 0 && rech(elem->ARG1,loc)!=NULL)?loc:env,elem->ARG1));
           affect((scope > 0 && rech(elem->RES,loc))?loc:env,elem->RES,res);
           elem = elem->SUIV;
