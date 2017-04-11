@@ -23,7 +23,6 @@ struct s_pp_value{
 	int value;
 	int members_count;
 	struct s_pp_value** members;
-	struct s_pp_value* next;
 };
 
 typedef struct s_pp_value* pp_value;
@@ -84,7 +83,6 @@ struct s_pp_stack{
 typedef struct s_pp_stack* pp_stack;
 
 void incr_line();
-void env_initialize();
 pp_var env_add_variable(char* name, pp_type type);
 pp_func env_add_function(char* name, pp_type ret_type, pp_var args);
 pp_var env_add_lcl_variable(pp_var lcl_parent, char* name, pp_type type);

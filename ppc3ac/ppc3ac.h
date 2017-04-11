@@ -34,7 +34,6 @@ struct s_pp_value{
 	int value;
 	int members_count;
 	struct s_pp_value** members;
-	struct s_pp_value* next;
 };
 
 typedef struct s_pp_value* pp_value;
@@ -53,12 +52,9 @@ typedef struct s_pp_var* pp_var;
 struct s_pp_func{
 	char* name;
 	pp_type ret_type;
-	pp_var context;
-	pp_var context_current;
 	pp_var args;		//reverse order
 	pp_var args_current;
 	syna_node body;
-	pp_value value;
 	struct s_pp_func* next;
 };
 
@@ -82,20 +78,9 @@ struct s_pp_context{
 	pp_var context;
 	pp_var current_context;
 	pp_var tmp_context;
-	pp_value return_value;
-	char* context_name;
 };
 
 typedef struct s_pp_context* pp_context;
-
-struct s_c3a_a{
-	struct s_c3a_a** members;
-	int size;
-	char* name;
-	struct s_c3a_a* next;
-};
-
-typedef struct s_c3a_a* c3a_a;
 
 void incr_line();
 void env_initialize();
@@ -135,14 +120,11 @@ syna_node syna_call_func_node(char* name, syna_node args);
 syna_node syna_newarray_node(syna_node type, syna_node expr);
 
 void syna_execute(syna_node root, pp_context context);
-void ina_execute(pp_func f, syna_node args);
 void err_display();
 void err_report();
 void env_report();
 void env_display(pp_context context);
 
 void exe_stop();
-pp_var exe_get_variable(char* name, pp_context context);
-pp_context exe_create_context();
 
 void out_write(int etq, char* op, char* arg1, char* arg2, char* dst);

@@ -38,7 +38,7 @@
 %start MP
 %%
 
-MP		: L_vart LD C { syna_node r = syna_root_node($1, $2, $3); syna_execute(r, exe_create_context()); }
+MP		: L_vart LD C { syna_node r = syna_root_node($1, $2, $3); syna_execute(r, NULL); }
 		;
 
 E		: E Pl E { $$ = syna_opi_node($1, $3, PL); }
@@ -141,7 +141,6 @@ int yyerror(char* s)
 
 int main()
 {
-	env_initialize();
 	yyparse();
 	env_report();
 	return 0;

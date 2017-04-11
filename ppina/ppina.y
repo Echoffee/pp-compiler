@@ -141,7 +141,6 @@ int yyerror(char* s)
 
 int main()
 {
-	env_initialize();
 	yyparse();
 	env_report();
 	return 0;
