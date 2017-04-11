@@ -160,11 +160,15 @@ int main(int argc, char *argv[]) {
                   elem = elem->SUIV;
               }
             }
-        } else if (elem->OP == St){
+        }
+         else if (elem->OP == St){
             break;
-        } else if (elem->OP == Sk){
+        }
+        else if (elem->OP == Sk){
             elem = elem->SUIV;
-        } else if (elem->OP == Call){
+        }
+        /* Call */
+         else if (elem->OP == Call){
           Push(&S,loc);
           tloc = loc;
           scope++;
@@ -188,7 +192,9 @@ int main(int argc, char *argv[]) {
               listStart = listStart->SUIV;
             }
           elem = listStart;
-        } else if (elem->OP == Ret){
+        }
+         /* Ret */
+         else if (elem->OP == Ret){
           scope--;
           elem->SUIV = (QUAD)Top(&S);//Récupération de elem->SUIV dans la pile
           Pop(&S);
@@ -209,7 +215,9 @@ int main(int argc, char *argv[]) {
           initenv((scope>0)?&loc:&env,&current[2]);
           affect((scope>0)?loc:env,&current[2],retval->VAL);
           elem = elem->SUIV;
-        } else if (elem->OP == Not){
+        }
+        /* Not */
+        else if (elem->OP == Not){
           ENV re = rech(elem->RES,loc);
           ENV a1 = rech(elem->ARG1,loc);
           initenv((re)?&loc:&env,elem->RES);
@@ -217,7 +225,9 @@ int main(int argc, char *argv[]) {
           int res = eval(elem->OP,valch((scope > 0 && rech(elem->ARG1,loc)!=NULL)?loc:env,elem->ARG1),valch((scope > 0 && rech(elem->ARG1,loc)!=NULL)?loc:env,elem->ARG1));
           affect((scope > 0 && rech(elem->RES,loc))?loc:env,elem->RES,res);
           elem = elem->SUIV;
-        } else if (elem->OP == AfInd){
+        }
+        /* AfInd */
+        else if (elem->OP == AfInd){
           char cons[18];
           strcpy(cons,"CT");
           strcat(cons,elem->ARG1);
@@ -226,7 +236,9 @@ int main(int argc, char *argv[]) {
           affect_ar((scope > 0 && rech(elem->ARG1,loc) != NULL)?loc:env,elem->ARG1,valch((scope > 0 && rech(elem->ARG2,loc) != NULL)?loc:env,elem->ARG2),valch((scope > 0 && rech(elem->RES,loc) != NULL)?loc:env,elem->RES));
           //needs to handle arrays
           elem=elem->SUIV;
-        } else if (elem->OP == Ind){
+        }
+        /* Ind */
+        else if (elem->OP == Ind){
           char cons[18];
           strcpy(cons,"CT");
           strcat(cons,elem->ARG1);
@@ -235,7 +247,9 @@ int main(int argc, char *argv[]) {
           affect((scope > 0 && rech(elem->RES,loc))?loc:env,elem->RES,valch_ar((scope > 0 && rech(elem->ARG1,loc))?loc:env,elem->ARG1,valch((scope > 0 && rech(elem->ARG2,loc))?loc:env,elem->ARG2)));
           //needs to handle arrays
           elem = elem->SUIV;
-        } else if (elem->OP == Param){
+        }
+         
+        else if (elem->OP == Param){
           initenv(&param,elem->ARG1);
           affect(param,elem->ARG1,valch((scope > 0 && rech(elem->ARG2,loc))?loc:env,elem->ARG2));//Ajoute à l'environnement Paramétrique le couple Arg1:=Arg2
           elem = elem->SUIV;
