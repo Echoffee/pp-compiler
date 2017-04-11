@@ -4,7 +4,7 @@
 
 Groupe : Adrien HALNAUT (A4), Yoan MARTY (A1)
 
-L'exécution du makefile de chaque dossier sans argument génère tous les exécutables nécessaires :
+L'exécution du Makefile de chaque dossier sans argument génère tous les exécutables nécessaires :
 	- ppsyna
 	- ppsema
 	- ppina
@@ -31,12 +31,12 @@ Question 3 : Interpréteur PP (ppina)
 	Lexèmes (flex) : 				ppina.l
 	Grammaire (bison) : 			ppina.y
 	Programme principal (AST) : 	ppina.c + ppina.h
-	Retourne les environnements (les variables) sur stdout
+	Retourne l' environnement global (les variables) sur stdout
 
 Question 4 : Compilateur PP > C3A (ppc3ac)
 	Lexèmes (flex) : 				ppc3ac.l
 	Grammaire (bison) : 			ppc3ac.y
-	Programme principal (Liste) : 	ppc3ac.c + ppc3ac.h
+	Programme principal (AST + Liste) : 	ppc3ac.c + ppc3ac.h
 	Retourne le programme PP correspondant en C3A sur stdout
 
 Question 5 : Interpréteur c3a (c3ai)
@@ -44,6 +44,3 @@ Question 5 : Interpréteur c3a (c3ai)
 	Retourne les environnements (et leurs variables) sur stdout
 
 	Le code de iimp est une sorte de fusion des fichiers des questions 3 et 4
-
-Une sorte d'arbre AST peut être affiché en décommentant les appels à display_ast_tree(), mais
-l'affichage n'est pas très agréable.
