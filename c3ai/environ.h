@@ -35,9 +35,11 @@ extern void removeLastFromEnv(ENV rho); /* supprime le dernier elem de rho      
 
 extern int ar_read(array* arr,int i); /* retourne arr[i]*/
 extern void ar_write(array* arr, int i, int value); /* réalise arr[i] = value */
+extern void print_ar(array *arr); /* écrit sur la sortie standard le tableau sous la forme nom_tableau valeurs*/
+
+/* variantes sur environnement */
 extern int affect_ar(ENV rho, char *t,int i, int val);
 extern ENV rech_ar(char *t, ENV listident);
 extern int valch_ar(ENV rho, char *t, int i);
 extern int initenv_ar(ENV *prho,char *t,int i,int size);
-extern void print_ar(array *arr);
 #endif
